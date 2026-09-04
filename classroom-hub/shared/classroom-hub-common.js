@@ -17,9 +17,8 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc,
   collection, query, where, orderBy, limit, onSnapshot, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import {
-  getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+// 급식 사진/PDF는 Firebase Storage(유료 Blaze 요금제 필요) 대신, 무료(Spark) 요금제로도
+// 되는 Firestore에 압축된 이미지를 직접 저장하는 방식을 씁니다. (아래 11번 섹션 참고)
 
 // =====================================================================
 // 1) Firebase 프로젝트 설정 — 여기를 실제 값으로 교체하세요
@@ -38,7 +37,6 @@ export const IS_CONFIG_READY = !String(firebaseConfig.apiKey).startsWith("REPLAC
 
 function getApp_(){ return getApps().length ? getApp() : initializeApp(firebaseConfig); }
 export const db = IS_CONFIG_READY ? getFirestore(getApp_()) : null;
-export const storage = IS_CONFIG_READY ? getStorage(getApp_()) : null;
 
 let authReadyPromise = null;
 export function ensureAuth(){
@@ -289,23 +287,84 @@ export async function deleteManualScheduleEntry(id){
 
 // =====================================================================
 // 11) 급식 메뉴 사진/PDF 업로드 — 나이스 대신(또는 함께) 그날 급식판 이미지를 보여줌
-//     classroomHub_mealUploads/{date}  { url, fileName, contentType, uploadedAt }
+//     classroomHub_mealUploads/{date}  { url(=data URL), fileName, contentType, uploadedAt }
 //     date로 문서를 구분하므로, 해당 날짜가 오면 HUD가 자동으로 그 파일을 보여준다.
 //     전체 학급 공통(학급으로 구분하지 않음) — 급식은 원래 학교 전체 공통이라 자연스러움.
+//
+//     ⚠️ Firebase Storage는 유료(Blaze) 요금제가 있어야 켤 수 있어서, 대신 무료(Spark)
+//     요금제에서도 되는 Firestore에 "압축한 사진을 데이터로 직접" 저장하는 방식을 씁니다.
+//     Firestore 문서 하나의 용량 제한이 1MB라서, 사진은 자동으로 줄여서 저장하고
+//     (보통 몇백 KB면 충분히 알아볼 수 있어요), PDF는 원본 그대로라 용량이 크면 저장이 안 될 수 있어요.
 // =====================================================================
-export async function uploadMealFile(date, file){
-  if(!db || !storage) throw new Error("Firebase 설정이 아직 준비되지 않았습니다.");
-  await ensureAuth();
-  const safeName = file.name.replace(/[^\w.\-가-힣]/g, "_");
-  const path = `mealUploads/${date}/${Date.now()}_${safeName}`;
-  const fileRef = storageRef(storage, path);
-  await uploadBytes(fileRef, file, { contentType: file.type || "application/octet-stream" });
-  const url = await getDownloadURL(fileRef);
-  await setDoc(doc(db, "classroomHub_mealUploads", date), {
-    url, storagePath: path, fileName: file.name,
-    contentType: file.type || "", uploadedAt: serverTimestamp()
+const MEAL_FILE_MAX_BYTES = 700000; // 원본(압축 후) 기준 약 700KB — data URL(base64)로 바뀌면 약 1MB 내외
+
+function readFileAsDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("파일을 읽지 못했습니다."));
+    reader.readAsDataURL(file);
   });
-  return url;
+}
+
+function loadImage(dataUrl){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("이미지를 불러오지 못했습니다."));
+    img.src = dataUrl;
+  });
+}
+
+// 사진 파일을 캔버스로 다시 그려서 용량을 줄인 JPEG data URL로 변환.
+// 한 번에 안 줄어들면 화질/크기를 단계적으로 더 낮춰가며 여러 번 시도한다.
+async function compressImageToDataUrl(file){
+  const original = await readFileAsDataUrl(file);
+  const img = await loadImage(original);
+  const attempts = [
+    { maxDim: 1400, quality: 0.75 },
+    { maxDim: 1100, quality: 0.6 },
+    { maxDim: 900,  quality: 0.5 },
+    { maxDim: 700,  quality: 0.4 }
+  ];
+  for(const { maxDim, quality } of attempts){
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, h);
+    const outUrl = canvas.toDataURL("image/jpeg", quality);
+    const approxBytes = Math.ceil((outUrl.length - outUrl.indexOf(",") - 1) * 3 / 4);
+    if(approxBytes <= MEAL_FILE_MAX_BYTES) return outUrl;
+  }
+  throw new Error("사진 용량이 너무 커서 줄여도 저장할 수 없어요. 더 작은 사진으로 다시 시도해주세요.");
+}
+
+export async function uploadMealFile(date, file){
+  if(!db) throw new Error("Firebase 설정이 아직 준비되지 않았습니다.");
+  await ensureAuth();
+
+  const isImage = (file.type || "").startsWith("image/");
+  let dataUrl, contentType;
+  if(isImage){
+    dataUrl = await compressImageToDataUrl(file);
+    contentType = "image/jpeg";
+  } else {
+    dataUrl = await readFileAsDataUrl(file);
+    const approxBytes = Math.ceil((dataUrl.length - dataUrl.indexOf(",") - 1) * 3 / 4);
+    if(approxBytes > MEAL_FILE_MAX_BYTES){
+      throw new Error("PDF 용량이 너무 커요(약 " + Math.round(approxBytes/1024) + "KB). 무료 저장 방식은 파일당 약 700KB까지만 가능해요 — 사진(JPG/PNG)으로 올리시거나 더 작은 PDF로 시도해주세요.");
+    }
+    contentType = file.type || "application/octet-stream";
+  }
+
+  await setDoc(doc(db, "classroomHub_mealUploads", date), {
+    url: dataUrl, fileName: file.name,
+    contentType, uploadedAt: serverTimestamp()
+  });
+  return dataUrl;
 }
 
 export function subscribeMealUpload(date, cb){
@@ -326,11 +385,8 @@ export function subscribeMealUploadsList(cb){
   }, err=>console.error("[classroom-hub] mealUploadsList 구독 오류:", err));
 }
 
-export async function deleteMealUpload(date, storagePath){
+export async function deleteMealUpload(date){
   if(!db) return;
   await ensureAuth();
   await deleteDoc(doc(db, "classroomHub_mealUploads", date));
-  if(storagePath && storage){
-    try { await deleteObject(storageRef(storage, storagePath)); } catch(e){ console.warn("[classroom-hub] 스토리지 파일 삭제 실패(문서는 삭제됨):", e); }
-  }
 }
