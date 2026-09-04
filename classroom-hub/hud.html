@@ -20,11 +20,6 @@
   #configWarn{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#FFF3D6;border:2px dashed #FFC169;
     color:#8a6a1f;border-radius:10px;padding:6px 14px;font-size:12px;z-index:999;display:none;}
   .setup-corner{position:fixed;bottom:8px;right:10px;font-size:11px;color:#C79BC0;z-index:999;cursor:pointer;}
-  .notify-btn{position:fixed;bottom:8px;left:10px;z-index:999;font-size:11.5px;font-weight:700;
-    background:#fff;border:2px solid var(--border-soft);color:var(--cream);border-radius:14px;
-    padding:5px 12px;cursor:pointer;box-shadow:0 4px 10px rgba(216,120,178,.15);display:none;}
-  .notify-btn:hover{border-color:var(--gold);}
-  .notify-btn.granted{background:#EAFBF3;border-color:#9EE8C6;color:#1e8a5f;cursor:default;}
 
   /* ===== 대기 화면 ===== */
   #screenStandby{background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);padding:30px 40px;}
@@ -40,75 +35,15 @@
   .panel h3{font-family:'Jua',sans-serif;font-weight:400;margin:0 0 12px;font-size:17px;color:var(--gold-light);
     display:flex;align-items:center;gap:8px;}
   .panel .content{overflow-y:auto;flex:1;}
-  .meal-item{margin-bottom:16px;animation:mealFadeIn .5s ease both;}
-  .meal-item .type{font-weight:900;font-size:14.5px;color:var(--gold-light);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-  .menu-chips{display:flex;flex-wrap:wrap;gap:6px;}
-  .chip{position:relative;display:inline-flex;align-items:center;gap:5px;background:#FFF0F7;border:1.5px solid var(--border-soft);
-    border-radius:14px;padding:5px 11px 5px 8px;font-size:13.5px;color:var(--cream);font-weight:700;line-height:1.3;
-    animation:chipPop .5s cubic-bezier(.34,1.56,.64,1) both, chipGlow 3.2s ease-in-out infinite;}
-  .chip .ico{font-size:16px;display:inline-block;animation:iconBounce 2.4s ease-in-out infinite;}
-  /* 뜨끈한 음식(국/찌개/밥 등)에서 모락모락 김이 나는 효과 */
-  .chip.steamy::before, .chip.steamy::after{
-    content:'';position:absolute;top:-2px;width:3px;height:9px;
-    background:linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,.85));
-    border-radius:3px;filter:blur(1px);opacity:0;pointer-events:none;
-    animation:steamRise 2.4s ease-in-out infinite;
-  }
-  .chip.steamy::before{ left:14px; animation-delay:.1s; }
-  .chip.steamy::after{ left:20px; animation-delay:1.1s; }
-  @keyframes steamRise{
-    0%{ transform:translateY(2px) scaleY(.5); opacity:0; }
-    35%{ opacity:.7; }
-    75%{ opacity:.25; }
-    100%{ transform:translateY(-14px) scaleY(1.3); opacity:0; }
-  }
-  @keyframes mealFadeIn{ from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-  @keyframes chipPop{
-    0%{ transform:scale(.3) translateY(14px); opacity:0; }
-    65%{ transform:scale(1.1) translateY(-3px); opacity:1; }
-    100%{ transform:scale(1) translateY(0); opacity:1; }
-  }
-  @keyframes chipGlow{
-    0%,100%{ box-shadow:0 0 0 rgba(255,111,166,0); }
-    50%{ box-shadow:0 3px 12px rgba(255,111,166,.28); }
-  }
-  @keyframes iconBounce{
-    0%,100%{ transform:translateY(0) rotate(0deg); }
-    25%{ transform:translateY(-3px) rotate(-8deg); }
-    50%{ transform:translateY(0) rotate(0deg); }
-    75%{ transform:translateY(-2px) rotate(6deg); }
-  }
-  .panel h3{position:relative;}
-  .sparkle{position:absolute;top:-6px;font-size:11px;opacity:0;pointer-events:none;animation:sparkleTwinkle 2.6s ease-in-out infinite;}
-  .sparkle.s1{ left:150px; animation-delay:.2s; }
-  .sparkle.s2{ left:172px; top:4px; font-size:8px; animation-delay:1.1s; }
-  .sparkle.s3{ left:190px; animation-delay:1.9s; font-size:9px; }
-  @keyframes sparkleTwinkle{
-    0%,100%{ opacity:0; transform:scale(.4) rotate(0deg); }
-    50%{ opacity:1; transform:scale(1) rotate(18deg); }
-  }
-  .meal-photo-wrap{margin-bottom:14px;border-radius:16px;overflow:hidden;border:2px solid var(--border-soft);
-    box-shadow:0 10px 22px rgba(255,111,166,.22);animation:mealFadeIn .5s ease both, photoGlow 3.4s ease-in-out infinite;}
-  .meal-photo-wrap img{display:block;width:100%;max-height:220px;object-fit:cover;}
-  .meal-photo-wrap iframe{display:block;width:100%;height:220px;border:none;background:#fff;}
-  @keyframes photoGlow{
-    0%,100%{ box-shadow:0 10px 22px rgba(255,111,166,.18); }
-    50%{ box-shadow:0 12px 28px rgba(255,111,166,.36); }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .meal-item, .chip, .chip .ico, .chip.steamy::before, .chip.steamy::after,
-    .sparkle, .meal-photo-wrap{ animation:none !important; }
-  }
-  .tt-row{display:flex;gap:12px;padding:7px 0;border-bottom:1px dashed var(--border-soft);font-size:15px;align-items:center;}
+  .meal-item{margin-bottom:14px;}
+  .meal-item .type{font-weight:900;font-size:14px;color:var(--gold-light);margin-bottom:4px;}
+  .meal-item .menu{font-size:15px;line-height:1.6;color:var(--cream);}
+  .tt-row{display:flex;gap:12px;padding:7px 0;border-bottom:1px dashed var(--border-soft);font-size:15px;}
   .tt-row .p{width:26px;font-weight:900;color:var(--gold);}
-  .tt-row .t{margin-left:auto;font-size:12px;color:#B07AA8;font-weight:700;}
   .sc-row{padding:8px 0;border-bottom:1px dashed var(--border-soft);}
   .sc-row .d{font-size:12.5px;color:var(--gold-light);font-weight:700;}
   .sc-row .n{font-size:15px;}
-  .empty-note{color:#C79BC0;font-size:13px;line-height:1.7;}
-  .src-note{margin-top:8px;font-size:11.5px;color:#B98CB0;text-align:right;}
-  .admin-link{color:var(--gold-light);font-weight:700;text-decoration:none;}
-  .admin-link:hover{text-decoration:underline;}
+  .empty-note{color:#C79BC0;font-size:13px;}
 
   /* ===== 활동 진행 화면 ===== */
   #screenActivity{background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);
@@ -136,7 +71,6 @@
 <body>
 <div id="configWarn">⚠️ Firebase 설정값 미입력 — shared/classroom-hub-common.js 를 확인하세요 (미리보기 모드)</div>
 <div class="setup-corner" id="setupCorner">학급: <span id="setupClassLabel">-</span> (변경: URL에 ?grade=2&class=9)</div>
-<button class="notify-btn" id="notifyPermBtn" type="button">🔔 창을 내려도 호출 알림 받기</button>
 
 <!-- 대기 화면 -->
 <div class="screen" id="screenStandby">
@@ -152,7 +86,7 @@
   </div>
   <div class="standby-grid">
     <div class="panel">
-      <h3>🍽 오늘의 급식 <span class="sparkle s1">✨</span><span class="sparkle s2">✨</span><span class="sparkle s3">⭐</span></h3>
+      <h3>🍽 오늘의 급식</h3>
       <div class="content" id="mealBox"><div class="empty-note">불러오는 중…</div></div>
     </div>
     <div class="panel">
@@ -186,10 +120,9 @@
 <script type="module">
 import {
   IS_CONFIG_READY, SCHOOL, getSelectedClass, setSelectedClass, classLabel, getClassId,
-  subscribeState, subscribeCallsForClass, acknowledgeCall, speak, fmtClock, fmtDate, fmtCountdown,
-  subscribeManualTimetable, subscribeManualSchedule, subscribeMealUpload
+  subscribeState, subscribeCallsForClass, acknowledgeCall, speak, fmtClock, fmtDate, fmtCountdown
 } from "./shared/classroom-hub-common.js";
-import { getStandbyInfo, mealEmoji, mealTypeEmoji, isHotDish, ymd } from "./shared/neis.js";
+import { getStandbyInfo } from "./shared/neis.js";
 
 document.getElementById('configWarn').style.display = IS_CONFIG_READY ? 'none' : 'block';
 
@@ -225,147 +158,47 @@ setInterval(()=>{
   document.getElementById('dateEl').textContent = fmtDate(now);
 }, 1000);
 
-// ---- 대기화면: NEIS 정보 + 선생님이 admin.html에서 직접 입력한 정보를 합쳐서 표시 ----
-let neisMeal = [], neisTimetable = [], neisTimetableFailed = false;
-let neisSchedule = [];
-let manualTimetableDays = {};   // { mon:[{period,subject}], ... } (이 학급용, admin.html에서 입력)
-let manualScheduleList = [];    // [{id,date,name}] 전체 학급 공통(admin.html에서 입력)
-let mealUploadToday = null;     // admin.html에서 오늘 날짜로 올린 급식 사진/PDF { url, contentType, fileName }
-
-async function loadNeisInfo(){
+// ---- 대기화면: NEIS 정보 ----
+async function loadStandbyInfo(){
   try{
     const info = await getStandbyInfo(SCHOOL, grade, cls);
-    neisMeal = info.meal;
-    neisTimetable = info.timetable;
-    neisSchedule = info.schedule;
-    neisTimetableFailed = false;
+    renderMeal(info.meal);
+    renderTimetable(info.timetable);
+    renderSchedule(info.schedule);
     if(info.errors && info.errors.length) console.warn('[hud] NEIS 일부 오류:', info.errors);
   }catch(e){
     console.error('[hud] NEIS 로드 실패:', e);
-    neisMeal = []; neisTimetable = []; neisSchedule = [];
-    neisTimetableFailed = true;
+    document.getElementById('mealBox').innerHTML = `<div class="empty-note">급식 정보를 불러오지 못했습니다.<br>${e.message||''}</div>`;
+    document.getElementById('ttBox').innerHTML = `<div class="empty-note">시간표를 불러오지 못했습니다.</div>`;
+    document.getElementById('scBox').innerHTML = `<div class="empty-note">학사일정을 불러오지 못했습니다.</div>`;
   }
-  renderMeal();
-  renderTimetable();
-  renderSchedule();
 }
-
-// 학급별 주간 시간표(admin.html에서 입력) 실시간 구독 — 나이스 시간표가 비어있을 때 대신 보여줌
-subscribeManualTimetable(classId, data=>{
-  manualTimetableDays = (data && data.days) || {};
-  renderTimetable();
-});
-// 전체 학급 공통 학사일정(admin.html에서 입력) 실시간 구독 — 나이스 학사일정과 합쳐서 보여줌
-subscribeManualSchedule(rows=>{
-  manualScheduleList = rows;
-  renderSchedule();
-});
-
-// 급식 사진/PDF 업로드(admin.html) 실시간 구독 — 날짜가 바뀌면 오늘 날짜 문서로 다시 구독
-let mealUploadUnsub = null;
-let mealUploadDate = null;
-function resubscribeMealUpload(){
-  const today = ymd(new Date());
-  if(today === mealUploadDate) return;
-  mealUploadDate = today;
-  if(mealUploadUnsub) mealUploadUnsub();
-  mealUploadUnsub = subscribeMealUpload(today, data=>{
-    mealUploadToday = data;
-    renderMeal();
-  });
-}
-resubscribeMealUpload();
-
-function renderMeal(){
+function renderMeal(meal){
   const box = document.getElementById('mealBox');
-
-  // 관리자가 admin.html에서 오늘 날짜로 급식 사진/PDF를 올려뒀으면 맨 위에 자동으로 보여준다
-  let photoHtml = '';
-  if(mealUploadToday && mealUploadToday.url){
-    const isPdf = (mealUploadToday.contentType || '').includes('pdf') || /\.pdf$/i.test(mealUploadToday.fileName || '');
-    photoHtml = `<div class="meal-photo-wrap">${
-      isPdf
-        ? `<iframe src="${mealUploadToday.url}" title="오늘의 급식 PDF"></iframe>`
-        : `<img src="${mealUploadToday.url}" alt="오늘의 급식 사진">`
-    }</div>`;
-  }
-
-  if(!neisMeal || !neisMeal.length){
-    box.innerHTML = photoHtml || '<div class="empty-note">오늘은 급식 정보가 없습니다.</div>';
-    return;
-  }
-  // 카드/칩이 순서대로 통통 튀며 나타나도록 애니메이션 지연 시간을 하나씩 어긋나게 부여
-  const mealHtml = neisMeal.map((m, mi)=>`
-    <div class="meal-item" style="animation-delay:${(mi*0.15).toFixed(2)}s">
-      <div class="type">${mealTypeEmoji(m.mealType)} ${m.mealType}</div>
-      <div class="menu-chips">${m.menu.map((d,i)=>{
-        const popDelay = (mi*0.2 + i*0.09).toFixed(2);
-        const bounceDelay = ((i*0.18) % 1.8).toFixed(2);
-        const steamy = isHotDish(d) ? ' steamy' : '';
-        return `<span class="chip${steamy}" style="animation-delay:${popDelay}s"><span class="ico" style="animation-delay:${bounceDelay}s">${mealEmoji(d)}</span>${d}</span>`;
-      }).join('')}</div>
+  if(!meal || !meal.length){ box.innerHTML = '<div class="empty-note">오늘은 급식 정보가 없습니다.</div>'; return; }
+  box.innerHTML = meal.map(m=>`
+    <div class="meal-item">
+      <div class="type">${m.mealType}</div>
+      <div class="menu">${m.menu.join(' · ')}</div>
     </div>`).join('');
-  box.innerHTML = photoHtml + mealHtml;
 }
-
-function renderTimetable(){
+function renderTimetable(tt){
   const box = document.getElementById('ttBox');
-  let rows = neisTimetable;
-  let isManual = false;
-
-  if(!rows || !rows.length){
-    // 나이스에 오늘 시간표가 없으면(학교 등록 누락 등), 선생님이 admin.html에서 입력한
-    // 이 학급의 주간 시간표에서 오늘 요일에 해당하는 시간표로 대신 보여준다.
-    const dow = new Date().getDay(); // 0=일 ... 6=토
-    const key = ['sun','mon','tue','wed','thu','fri','sat'][dow];
-    const manualRows = (manualTimetableDays[key] || []).slice().sort((a,b)=>Number(a.period)-Number(b.period));
-    if(manualRows.length){ rows = manualRows; isManual = true; }
-  }
-
-  if(!rows || !rows.length){
-    box.innerHTML = `<div class="empty-note">오늘은 시간표 정보가 없습니다.<br><a class="admin-link" href="admin.html" target="_blank">✏️ 시간표 직접 입력하기</a></div>`;
-    return;
-  }
-  box.innerHTML = rows.map(r=>`<div class="tt-row"><span class="p">${r.period}</span><span>${r.subject}</span>${r.teacher?`<span class="t">${r.teacher}</span>`:''}</div>`).join('')
-    + (isManual ? '<div class="src-note">✏️ 선생님이 직접 입력한 시간표예요</div>' : '');
+  if(!tt || !tt.length){ box.innerHTML = '<div class="empty-note">오늘은 시간표 정보가 없습니다.</div>'; return; }
+  box.innerHTML = tt.map(r=>`<div class="tt-row"><span class="p">${r.period}</span><span>${r.subject}</span></div>`).join('');
 }
-
-function renderSchedule(){
+function renderSchedule(sc){
   const box = document.getElementById('scBox');
-  const todayStr = ymd(new Date());
-  const seen = new Set();
-  const combined = [];
-  neisSchedule.forEach(e=>{
-    const k = e.date + '|' + e.name;
-    if(seen.has(k)) return;
-    seen.add(k);
-    combined.push({ date: e.date, name: e.name, manual:false });
-  });
-  manualScheduleList
-    .filter(e => e.date >= todayStr)
-    .forEach(e=>{
-      const k = e.date + '|' + e.name;
-      if(seen.has(k)) return;
-      seen.add(k);
-      combined.push({ date: e.date, name: e.name, manual:true });
-    });
-  combined.sort((a,b)=> a.date.localeCompare(b.date));
-  const rows = combined.slice(0, 6);
-
-  if(!rows.length){
-    box.innerHTML = `<div class="empty-note">예정된 학사일정이 없습니다.<br><a class="admin-link" href="admin.html" target="_blank">✏️ 학사일정 직접 입력하기</a></div>`;
-    return;
-  }
-  box.innerHTML = rows.map(e=>{
+  if(!sc || !sc.length){ box.innerHTML = '<div class="empty-note">예정된 학사일정이 없습니다.</div>'; return; }
+  box.innerHTML = sc.map(e=>{
     const d = `${e.date.slice(0,4)}.${e.date.slice(4,6)}.${e.date.slice(6,8)}`;
-    return `<div class="sc-row"><div class="d">${d}${e.manual?' · ✏️':''}</div><div class="n">${e.name}</div></div>`;
+    return `<div class="sc-row"><div class="d">${d}</div><div class="n">${e.name}</div></div>`;
   }).join('');
 }
-
-loadNeisInfo();
-setInterval(loadNeisInfo, 30*60*1000); // 30분마다 갱신
+loadStandbyInfo();
+setInterval(loadStandbyInfo, 30*60*1000); // 30분마다 갱신
 let lastDay = new Date().getDate();
-setInterval(()=>{ const d = new Date().getDate(); if(d !== lastDay){ lastDay = d; loadNeisInfo(); resubscribeMealUpload(); } }, 60*1000);
+setInterval(()=>{ const d = new Date().getDate(); if(d !== lastDay){ lastDay = d; loadStandbyInfo(); } }, 60*1000);
 
 // ---- 컨트롤러 state 구독 (활동 진행) ----
 let lastState = null;
@@ -427,87 +260,20 @@ subscribeState(classId, state=>{
   }
 });
 
-// ---- 창을 내리거나 다른 탭으로 전환했을 때도 호출을 알아차리도록: 브라우저 알림 + 탭 제목 깜빡임 ----
-const ORIGINAL_TITLE = document.title;
-const notifyBtn = document.getElementById('notifyPermBtn');
-let titleFlashHandle = null;
-
-function startTitleFlash(text){
-  if(titleFlashHandle) return;
-  let on = false;
-  titleFlashHandle = setInterval(()=>{
-    document.title = on ? ORIGINAL_TITLE : text;
-    on = !on;
-  }, 1000);
-}
-function stopTitleFlash(){
-  if(titleFlashHandle){ clearInterval(titleFlashHandle); titleFlashHandle = null; }
-  document.title = ORIGINAL_TITLE;
-}
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'visible' && !activeCalls.length) stopTitleFlash();
-});
-
-function updateNotifyBtn(){
-  if(!('Notification' in window)){ notifyBtn.style.display = 'none'; return; }
-  if(Notification.permission === 'granted'){
-    notifyBtn.textContent = '🔔 호출 알림 켜짐';
-    notifyBtn.classList.add('granted');
-    notifyBtn.style.display = 'inline-block';
-  } else if(Notification.permission === 'denied'){
-    notifyBtn.style.display = 'none'; // 브라우저에서 막아둔 상태 — 다시 요청해도 소용없음
-  } else {
-    notifyBtn.textContent = '🔔 창을 내려도 호출 알림 받기';
-    notifyBtn.classList.remove('granted');
-    notifyBtn.style.display = 'inline-block';
-  }
-}
-notifyBtn.addEventListener('click', async ()=>{
-  if(!('Notification' in window) || Notification.permission !== 'default') return;
-  try{ await Notification.requestPermission(); }catch(e){ console.warn('[hud] 알림 권한 요청 실패:', e); }
-  updateNotifyBtn();
-});
-updateNotifyBtn();
-
-let activeCallNotification = null;
-function notifyCallIfHidden(latest){
-  if(document.visibilityState === 'visible') return; // 화면을 보고 있으면 화면 전환 + 음성 안내로 충분
-  startTitleFlash('🚨 호출이 왔어요! 클릭하세요');
-  if('Notification' in window && Notification.permission === 'granted'){
-    try{
-      const n = new Notification('🚨 교무실 호출', {
-        body: `${latest.teacherName || '교무실'}${latest.location ? ' · ' + latest.location : ''}\n${latest.message || '교무실로 와주세요.'}`,
-        tag: 'classroom-hub-call', // 여러 알림이 겹쳐 쌓이지 않도록 같은 태그로 대체
-        requireInteraction: true  // 확인/클릭하기 전까지 카톡 알림처럼 화면에 계속 떠있게 함(크롬/엣지 데스크톱 지원)
-      });
-      activeCallNotification = n;
-      n.onclick = () => { window.focus(); n.close(); };
-      n.onclose = () => { activeCallNotification = null; };
-    }catch(e){ console.warn('[hud] 브라우저 알림 표시 실패:', e); }
-  }
-}
-
 // ---- 호출(calls) 구독 ----
 subscribeCallsForClass(classId, rows=>{
   activeCalls = rows;
   evaluateScreen();
-  if(!rows.length){
-    stopTitleFlash();
-    if(activeCallNotification){ activeCallNotification.close(); activeCallNotification = null; }
-  }
   const latest = rows[0];
   if(latest && !spokenCallIds.has(latest.id)){
     spokenCallIds.add(latest.id);
     document.getElementById('callFrom').textContent = `${latest.teacherName || '교무실'}${latest.location ? ' · ' + latest.location : ''}`;
     document.getElementById('callMsg').textContent = latest.message || '교무실로 와주세요.';
     speak(`${latest.teacherName || '교무실'}에서 호출입니다. ${latest.message || ''}`);
-    notifyCallIfHidden(latest);
   }
 });
 document.getElementById('ackBtn').addEventListener('click', ()=>{
   activeCalls.forEach(c=>acknowledgeCall(c.id));
-  stopTitleFlash();
-  if(activeCallNotification){ activeCallNotification.close(); activeCallNotification = null; }
 });
 
 // ---- 화면 우선순위: 호출 > 활동 진행 > 대기화면 ----
