@@ -96,6 +96,16 @@ const WARN_COOLDOWN_MS = 20000; // 경고 음성 재생 최소 간격
 document.getElementById('btnMicStart').addEventListener('click', startMic);
 
 async function startMic(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert(
+      '이 브라우저에서는 마이크 기능을 사용할 수 없어요.\n\n' +
+      '가장 흔한 원인은 주소가 https:// 가 아니라 http:// 로 열려 있는 경우입니다 ' +
+      '(마이크는 보안 연결(HTTPS)에서만 허용됩니다).\n' +
+      '주소창이 https://로 시작하는지, 자물쇠 아이콘이 떠 있는지 확인해주세요.\n' +
+      '커스텀 도메인을 막 연결했다면 인증서 발급까지 시간이 좀 걸릴 수 있어요.'
+    );
+    return;
+  }
   try{
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   }catch(e){
