@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통합 교실 허브 · 참여게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#FFE1EE; --bg-darker:#FFFFFF; --gold:#FF6FA6; --gold-light:#C765D8; --cream:#5B3358;
+    --card:#FFF2F8; --danger:#FF5C8A; --border-soft:#FFD3E6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;font-family:'Noto Sans KR',sans-serif;
+    background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);background-attachment:fixed;color:var(--cream);}
+  header{background:linear-gradient(120deg,#FFE1EE,#F4D9FB);border-bottom:3px dashed var(--gold);padding:14px 20px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 4px 16px rgba(255,111,166,.15);}
+  header h1{font-family:'Jua',sans-serif;font-weight:400;font-size:19px;margin:0;flex:1;}
+  header a{color:var(--cream);text-decoration:none;background:#fff;border:2px solid var(--border-soft);
+    padding:6px 14px;border-radius:16px;font-size:12.5px;font-weight:700;}
+  .tabs{display:flex;gap:8px;padding:16px 20px 0;max-width:1000px;margin:0 auto;}
+  .tab-btn{background:#fff;border:2px solid var(--border-soft);color:var(--cream);padding:10px 20px;
+    border-radius:16px 16px 0 0;font-weight:700;cursor:pointer;font-size:14px;}
+  .tab-btn.active{background:linear-gradient(135deg,var(--gold),#FFA6CC);color:#fff;border-color:var(--gold);}
+  main{max-width:1000px;margin:0 auto;padding:20px;}
+  .panel{display:none;background:#fff;border:2px solid var(--border-soft);border-radius:0 24px 24px 24px;padding:20px;
+    box-shadow:0 10px 28px rgba(216,120,178,.14);}
+  .panel.active{display:block;}
+
+  /* 포인트판 */
+  .mode-toggle{display:flex;gap:8px;margin-bottom:16px;}
+  .mode-toggle button{flex:1;padding:9px;border-radius:14px;border:2px solid var(--border-soft);background:#fff;
+    color:var(--cream);font-weight:700;cursor:pointer;}
+  .mode-toggle button.active{background:linear-gradient(135deg,var(--gold),#FFA6CC);color:#fff;border-color:var(--gold);}
+  .add-row{display:flex;gap:8px;margin-bottom:16px;}
+  .add-row input{flex:1;padding:9px 12px;border-radius:10px;border:2px solid var(--border-soft);background:#fff;color:var(--cream);}
+  .add-row button{padding:9px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold-light),#DC8CE8);
+    color:#fff;font-weight:900;cursor:pointer;}
+  .score-list{display:flex;flex-direction:column;gap:8px;}
+  .score-row{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--border-soft);
+    border-radius:16px;padding:10px 14px;}
+  .score-row.rank-1{border-color:#FFC94D;box-shadow:0 0 0 1px #FFC94D inset;background:#FFF7E3;}
+  .score-row.rank-2{border-color:#CBB8E8;background:#F5F0FC;}
+  .score-row.rank-3{border-color:#FFB98A;background:#FFF1E5;}
+  .rank-badge{width:26px;text-align:center;font-weight:900;color:var(--gold-light);}
+  .row-name{flex:1;font-weight:700;font-size:15px;color:var(--cream);}
+  .row-points{font-family:'Roboto Mono',monospace;font-weight:900;color:var(--gold);width:56px;text-align:right;}
+  .pt-btn{background:#fff;border:2px solid var(--border-soft);color:var(--cream);border-radius:10px;
+    padding:6px 10px;font-weight:700;cursor:pointer;font-size:13px;}
+  .pt-btn:hover{background:var(--gold);border-color:var(--gold);color:#fff;}
+  .del-btn{background:transparent;border:none;color:#E8789C;cursor:pointer;font-size:15px;}
+  .reset-row{margin-top:16px;text-align:right;}
+  .reset-row button{background:linear-gradient(135deg,#FF9FB8,var(--danger));color:#fff;border:none;border-radius:10px;
+    padding:8px 14px;cursor:pointer;font-size:12.5px;font-weight:700;}
+
+  /* 랜덤 뽑기 */
+  .picker-roster{margin-bottom:16px;}
+  .picker-roster textarea{width:100%;min-height:80px;border-radius:10px;border:2px solid var(--border-soft);
+    background:#fff;color:var(--cream);padding:10px;font-family:inherit;resize:vertical;}
+  .picker-opts{display:flex;gap:16px;align-items:center;margin:10px 0 20px;font-size:13.5px;flex-wrap:wrap;}
+  .exclude-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+  .chip{background:var(--card);border:2px solid var(--border-soft);border-radius:16px;padding:5px 12px;
+    font-size:12.5px;cursor:pointer;user-select:none;}
+  .chip.excluded{opacity:.4;text-decoration:line-through;}
+  .slot{background:linear-gradient(160deg,#FFF6FA,#FDEBFA);border:3px dashed var(--gold);border-radius:24px;padding:50px 20px;
+    text-align:center;font-size:clamp(32px,7vw,64px);font-weight:900;color:var(--gold-light);margin-bottom:18px;min-height:1.4em;}
+  .draw-btn{width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--gold),#FFA6CC);
+    color:#fff;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(255,111,166,.35);}
+  .draw-btn:disabled{opacity:.5;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏆 통합 교실 허브 <span style="color:var(--gold-light)">· 참여게임</span></h1>
+  <a href="controller.html">🎛 컨트롤러로</a>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="score">📊 포인트판</button>
+  <button class="tab-btn" data-tab="picker">🎰 랜덤 뽑기</button>
+</div>
+
+<main>
+  <!-- 포인트판 -->
+  <section class="panel active" id="panel-score">
+    <div class="mode-toggle">
+      <button data-mode="groups" class="active">👥 모둠 포인트</button>
+      <button data-mode="students">🙋 학생 포인트</button>
+    </div>
+    <div class="add-row">
+      <input type="text" id="newEntryName" placeholder="이름 추가 (예: 1모둠 / 홍길동)">
+      <button id="btnAddEntry">+ 추가</button>
+    </div>
+    <div class="score-list" id="scoreList"></div>
+    <div class="reset-row"><button id="btnResetScores">이 목록 점수 전체 초기화</button></div>
+  </section>
+
+  <!-- 랜덤 뽑기 -->
+  <section class="panel" id="panel-picker">
+    <div class="picker-roster">
+      <label style="font-size:12.5px;color:#8a5c82;font-weight:700;">뽑기 대상 명단 (한 줄에 한 명, 학생 포인트판 명단과 별개로 관리됩니다)</label>
+      <textarea id="rosterText" placeholder="홍길동&#10;김영희&#10;..."></textarea>
+    </div>
+    <div class="picker-opts">
+      <label><input type="checkbox" id="autoExclude"> 뽑힌 사람 자동 제외</label>
+      <button type="button" id="btnResetExclude" style="background:var(--card);border:2px solid var(--border-soft);color:var(--cream);border-radius:10px;padding:6px 10px;cursor:pointer;font-weight:700;">제외 초기화</button>
+    </div>
+    <div class="exclude-chips" id="excludeChips"></div>
+    <div class="slot" id="slotEl">뽑기 대상을 입력하세요</div>
+    <button class="draw-btn" id="btnDraw">🎰 뽑기 시작</button>
+  </section>
+</main>
+
+<script type="module">
+import { getSelectedClass, classLabel, getClassId, subscribeParticipation, saveParticipation, speak } from "./shared/classroom-hub-common.js";
+
+const urlParams = new URLSearchParams(location.search);
+let { grade, cls } = getSelectedClass();
+if(urlParams.get('grade')) grade = Number(urlParams.get('grade'));
+if(urlParams.get('class')) cls = Number(urlParams.get('class'));
+const classId = getClassId(grade, cls);
+
+// ---- 탭 전환 ----
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id === 'panel-'+btn.dataset.tab));
+  });
+});
+
+// ============ 포인트판 ============
+let data = { groups: [], students: [] };
+let scoreMode = 'groups';
+subscribeParticipation(classId, d=>{ data = d || { groups: [], students: [] }; renderScoreList(); });
+
+document.querySelectorAll('.mode-toggle button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    scoreMode = btn.dataset.mode;
+    document.querySelectorAll('.mode-toggle button').forEach(b=>b.classList.toggle('active', b===btn));
+    renderScoreList();
+  });
+});
+
+function renderScoreList(){
+  const list = [...(data[scoreMode] || [])].sort((a,b)=>b.points-a.points);
+  const el = document.getElementById('scoreList');
+  if(!list.length){ el.innerHTML = '<div style="color:#9db3a4;font-size:13px;">아직 등록된 항목이 없습니다. 위에서 이름을 추가해보세요.</div>'; return; }
+  el.innerHTML = list.map((item, idx)=>{
+    const rankClass = idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':'';
+    const badge = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':(idx+1);
+    return `
+    <div class="score-row ${rankClass}" data-name="${item.name}">
+      <div class="rank-badge">${badge}</div>
+      <div class="row-name">${item.name}</div>
+      <div class="row-points">${item.points}</div>
+      <button class="pt-btn" data-delta="1">+1</button>
+      <button class="pt-btn" data-delta="3">+3</button>
+      <button class="pt-btn" data-delta="5">+5</button>
+      <button class="del-btn" data-del="1">✕</button>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.pt-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.closest('.score-row').dataset.name;
+      changePoints(name, Number(btn.dataset.delta));
+    });
+  });
+  el.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.closest('.score-row').dataset.name;
+      const arr = (data[scoreMode] || []).filter(x=>x.name !== name);
+      persist(arr);
+    });
+  });
+}
+
+function changePoints(name, delta){
+  const arr = [...(data[scoreMode] || [])];
+  const item = arr.find(x=>x.name === name);
+  if(item) item.points = (item.points || 0) + delta;
+  persist(arr);
+}
+function persist(arr){
+  data = { ...data, [scoreMode]: arr };
+  saveParticipation(classId, { [scoreMode]: arr });
+}
+
+document.getElementById('btnAddEntry').addEventListener('click', ()=>{
+  const input = document.getElementById('newEntryName');
+  const name = input.value.trim();
+  if(!name) return;
+  const arr = [...(data[scoreMode] || [])];
+  if(arr.some(x=>x.name === name)){ input.value=''; return; }
+  arr.push({ name, points: 0 });
+  persist(arr);
+  input.value = '';
+});
+document.getElementById('btnResetScores').addEventListener('click', ()=>{
+  if(!confirm(`${scoreMode==='groups'?'모둠':'학생'} 점수를 모두 0으로 초기화할까요?`)) return;
+  const arr = (data[scoreMode] || []).map(x=>({ ...x, points: 0 }));
+  persist(arr);
+});
+
+// ============ 랜덤 뽑기 ============
+const LS_ROSTER_KEY = `classroomHub_pickerRoster_${classId}`;
+const LS_EXCLUDE_KEY = `classroomHub_pickerExclude_${classId}`;
+const rosterEl = document.getElementById('rosterText');
+let excluded = new Set(JSON.parse(localStorage.getItem(LS_EXCLUDE_KEY) || '[]'));
+
+rosterEl.value = localStorage.getItem(LS_ROSTER_KEY) || '';
+rosterEl.addEventListener('input', ()=>{
+  localStorage.setItem(LS_ROSTER_KEY, rosterEl.value);
+  renderChips();
+});
+
+function getRosterNames(){
+  return rosterEl.value.split('\n').map(s=>s.trim()).filter(Boolean);
+}
+function renderChips(){
+  const names = getRosterNames();
+  const box = document.getElementById('excludeChips');
+  box.innerHTML = names.map(n=>`<span class="chip ${excluded.has(n)?'excluded':''}" data-name="${n}">${n}</span>`).join('');
+  box.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const n = chip.dataset.name;
+      excluded.has(n) ? excluded.delete(n) : excluded.add(n);
+      localStorage.setItem(LS_EXCLUDE_KEY, JSON.stringify([...excluded]));
+      renderChips();
+    });
+  });
+}
+renderChips();
+
+document.getElementById('btnResetExclude').addEventListener('click', ()=>{
+  excluded.clear();
+  localStorage.setItem(LS_EXCLUDE_KEY, JSON.stringify([]));
+  renderChips();
+});
+
+document.getElementById('btnDraw').addEventListener('click', ()=>{
+  const pool = getRosterNames().filter(n => !excluded.has(n));
+  const slot = document.getElementById('slotEl');
+  if(!pool.length){ slot.textContent = '뽑을 수 있는 대상이 없습니다'; return; }
+
+  const btn = document.getElementById('btnDraw');
+  btn.disabled = true;
+  let ticks = 0;
+  const maxTicks = 24;
+  function step(){
+    slot.textContent = pool[Math.floor(Math.random()*pool.length)];
+    ticks++;
+    if(ticks >= maxTicks){
+      const winner = pool[Math.floor(Math.random()*pool.length)];
+      slot.textContent = '🎉 ' + winner;
+      speak(`${winner}!`);
+      if(document.getElementById('autoExclude').checked){
+        excluded.add(winner);
+        localStorage.setItem(LS_EXCLUDE_KEY, JSON.stringify([...excluded]));
+        renderChips();
+      }
+      btn.disabled = false;
+      return;
+    }
+    setTimeout(step, 70 + ticks*8); // 점점 느려지는 효과
+  }
+  step();
+});
+</script>
+</body>
+</html>

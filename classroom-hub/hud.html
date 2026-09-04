@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통합 교실 허브 · HUD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#FFE1EE; --bg-darker:#FFF8FC; --gold:#FF6FA6; --gold-light:#C765D8;
+    --cream:#5B3358; --danger:#FF4D89; --danger-bright:#FF1F68; --card:#FFFFFF;
+    --border-soft:#FFD3E6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:'Noto Sans KR',sans-serif;
+    background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);color:var(--cream);}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;}
+  .screen.show{display:flex;}
+  #configWarn{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#FFF3D6;border:2px dashed #FFC169;
+    color:#8a6a1f;border-radius:10px;padding:6px 14px;font-size:12px;z-index:999;display:none;}
+  .setup-corner{position:fixed;bottom:8px;right:10px;font-size:11px;color:#C79BC0;z-index:999;cursor:pointer;}
+
+  /* ===== 대기 화면 ===== */
+  #screenStandby{background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);padding:30px 40px;}
+  .standby-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;}
+  .school-name{font-family:'Jua',sans-serif;font-size:22px;font-weight:400;color:var(--gold-light);}
+  .class-name{font-size:16px;color:#8a5c82;margin-top:2px;font-weight:700;}
+  .clock{font-family:'Roboto Mono',monospace;font-size:64px;font-weight:700;text-align:right;line-height:1;
+    color:var(--cream);text-shadow:3px 3px 0 var(--border-soft);}
+  .date{font-size:18px;color:var(--gold-light);text-align:right;margin-top:8px;font-weight:700;}
+  .standby-grid{flex:1;display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:18px;min-height:0;}
+  .panel{background:var(--card);border:2px dashed var(--border-soft);border-radius:24px;padding:18px 20px;
+    display:flex;flex-direction:column;min-height:0;box-shadow:0 10px 26px rgba(216,120,178,.12);}
+  .panel h3{font-family:'Jua',sans-serif;font-weight:400;margin:0 0 12px;font-size:17px;color:var(--gold-light);
+    display:flex;align-items:center;gap:8px;}
+  .panel .content{overflow-y:auto;flex:1;}
+  .meal-item{margin-bottom:14px;}
+  .meal-item .type{font-weight:900;font-size:14px;color:var(--gold-light);margin-bottom:4px;}
+  .meal-item .menu{font-size:15px;line-height:1.6;color:var(--cream);}
+  .tt-row{display:flex;gap:12px;padding:7px 0;border-bottom:1px dashed var(--border-soft);font-size:15px;}
+  .tt-row .p{width:26px;font-weight:900;color:var(--gold);}
+  .sc-row{padding:8px 0;border-bottom:1px dashed var(--border-soft);}
+  .sc-row .d{font-size:12.5px;color:var(--gold-light);font-weight:700;}
+  .sc-row .n{font-size:15px;}
+  .empty-note{color:#C79BC0;font-size:13px;}
+
+  /* ===== 활동 진행 화면 ===== */
+  #screenActivity{background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);
+    align-items:center;justify-content:center;text-align:center;}
+  #screenActivity .act-name{font-family:'Jua',sans-serif;font-weight:400;font-size:38px;color:var(--gold-light);margin-bottom:10px;}
+  #screenActivity .act-timer{font-family:'Roboto Mono',monospace;font-size:clamp(80px,18vw,220px);font-weight:700;
+    line-height:1;color:var(--gold);text-shadow:5px 5px 0 var(--border-soft);}
+  #screenActivity .act-sub{font-size:18px;color:#8a5c82;margin-top:10px;font-weight:700;}
+  .progress-wrap{width:min(70vw,900px);height:24px;background:var(--border-soft);border-radius:14px;margin-top:26px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));width:0%;transition:width .5s linear;}
+  .paused-badge{margin-top:18px;background:linear-gradient(135deg,var(--gold),#FFA6CC);color:#fff;font-weight:900;
+    padding:6px 18px;border-radius:20px;font-size:14px;}
+
+  /* ===== 호출 알림 화면 ===== */
+  #screenCall{background:var(--danger);align-items:center;justify-content:center;text-align:center;animation:flash 1s infinite;}
+  @keyframes flash{ 0%,100%{background:var(--danger);} 50%{background:var(--danger-bright);} }
+  #screenCall .siren{font-size:70px;margin-bottom:6px;}
+  #screenCall .title{font-family:'Jua',sans-serif;font-weight:400;font-size:32px;letter-spacing:.05em;margin-bottom:18px;color:#fff;}
+  #screenCall .from{font-size:26px;font-weight:700;margin-bottom:6px;color:#FFE6F0;}
+  #screenCall .msg{font-size:34px;font-weight:900;max-width:80vw;line-height:1.4;margin-bottom:26px;color:#fff;}
+  #screenCall .ackBtn{font-size:20px;font-weight:900;padding:14px 40px;border-radius:40px;border:none;
+    background:#fff;color:var(--danger);cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.15);}
+</style>
+</head>
+<body>
+<div id="configWarn">⚠️ Firebase 설정값 미입력 — shared/classroom-hub-common.js 를 확인하세요 (미리보기 모드)</div>
+<div class="setup-corner" id="setupCorner">학급: <span id="setupClassLabel">-</span> (변경: URL에 ?grade=2&class=9)</div>
+
+<!-- 대기 화면 -->
+<div class="screen" id="screenStandby">
+  <div class="standby-top">
+    <div>
+      <div class="school-name" id="schoolNameEl">학교</div>
+      <div class="class-name" id="classNameEl">학년-반</div>
+    </div>
+    <div>
+      <div class="clock" id="clockEl">--:--:--</div>
+      <div class="date" id="dateEl">-</div>
+    </div>
+  </div>
+  <div class="standby-grid">
+    <div class="panel">
+      <h3>🍽 오늘의 급식</h3>
+      <div class="content" id="mealBox"><div class="empty-note">불러오는 중…</div></div>
+    </div>
+    <div class="panel">
+      <h3>🗓 오늘의 시간표</h3>
+      <div class="content" id="ttBox"><div class="empty-note">불러오는 중…</div></div>
+    </div>
+    <div class="panel">
+      <h3>📌 학사일정</h3>
+      <div class="content" id="scBox"><div class="empty-note">불러오는 중…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 활동 진행 화면 -->
+<div class="screen" id="screenActivity">
+  <div class="act-name" id="actNameEl">활동</div>
+  <div class="act-timer" id="actTimerEl">00:00</div>
+  <div class="act-sub" id="actSubEl"></div>
+  <div class="progress-wrap"><div class="progress-bar" id="progBar"></div></div>
+</div>
+
+<!-- 호출 알림 화면 -->
+<div class="screen" id="screenCall">
+  <div class="siren">🚨</div>
+  <div class="title">교무실 호출</div>
+  <div class="from" id="callFrom">-</div>
+  <div class="msg" id="callMsg">-</div>
+  <button class="ackBtn" id="ackBtn">확인했어요</button>
+</div>
+
+<script type="module">
+import {
+  IS_CONFIG_READY, SCHOOL, getSelectedClass, setSelectedClass, classLabel, getClassId,
+  subscribeState, subscribeCallsForClass, acknowledgeCall, speak, fmtClock, fmtDate, fmtCountdown
+} from "./shared/classroom-hub-common.js";
+import { getStandbyInfo } from "./shared/neis.js";
+
+document.getElementById('configWarn').style.display = IS_CONFIG_READY ? 'none' : 'block';
+
+// ---- 학급 결정: URL 파라미터 우선, 없으면 localStorage ----
+const urlParams = new URLSearchParams(location.search);
+let { grade, cls } = getSelectedClass();
+if(urlParams.get('grade')) grade = Number(urlParams.get('grade'));
+if(urlParams.get('class')) cls = Number(urlParams.get('class'));
+setSelectedClass(grade, cls);
+const classId = getClassId(grade, cls);
+
+document.getElementById('schoolNameEl').textContent = SCHOOL.name;
+document.getElementById('classNameEl').textContent = classLabel(grade, cls);
+document.getElementById('setupClassLabel').textContent = classLabel(grade, cls);
+
+// ---- 화면 전환 관리 ----
+const screens = {
+  standby: document.getElementById('screenStandby'),
+  activity: document.getElementById('screenActivity'),
+  call: document.getElementById('screenCall')
+};
+let currentScreen = null;
+function showScreen(name){
+  if(currentScreen === name) return;
+  currentScreen = name;
+  Object.entries(screens).forEach(([k,el])=>el.classList.toggle('show', k===name));
+}
+
+// ---- 시계 ----
+setInterval(()=>{
+  const now = new Date();
+  document.getElementById('clockEl').textContent = fmtClock(now);
+  document.getElementById('dateEl').textContent = fmtDate(now);
+}, 1000);
+
+// ---- 대기화면: NEIS 정보 ----
+async function loadStandbyInfo(){
+  try{
+    const info = await getStandbyInfo(SCHOOL, grade, cls);
+    renderMeal(info.meal);
+    renderTimetable(info.timetable);
+    renderSchedule(info.schedule);
+    if(info.errors && info.errors.length) console.warn('[hud] NEIS 일부 오류:', info.errors);
+  }catch(e){
+    console.error('[hud] NEIS 로드 실패:', e);
+    document.getElementById('mealBox').innerHTML = `<div class="empty-note">급식 정보를 불러오지 못했습니다.<br>${e.message||''}</div>`;
+    document.getElementById('ttBox').innerHTML = `<div class="empty-note">시간표를 불러오지 못했습니다.</div>`;
+    document.getElementById('scBox').innerHTML = `<div class="empty-note">학사일정을 불러오지 못했습니다.</div>`;
+  }
+}
+function renderMeal(meal){
+  const box = document.getElementById('mealBox');
+  if(!meal || !meal.length){ box.innerHTML = '<div class="empty-note">오늘은 급식 정보가 없습니다.</div>'; return; }
+  box.innerHTML = meal.map(m=>`
+    <div class="meal-item">
+      <div class="type">${m.mealType}</div>
+      <div class="menu">${m.menu.join(' · ')}</div>
+    </div>`).join('');
+}
+function renderTimetable(tt){
+  const box = document.getElementById('ttBox');
+  if(!tt || !tt.length){ box.innerHTML = '<div class="empty-note">오늘은 시간표 정보가 없습니다.</div>'; return; }
+  box.innerHTML = tt.map(r=>`<div class="tt-row"><span class="p">${r.period}</span><span>${r.subject}</span></div>`).join('');
+}
+function renderSchedule(sc){
+  const box = document.getElementById('scBox');
+  if(!sc || !sc.length){ box.innerHTML = '<div class="empty-note">예정된 학사일정이 없습니다.</div>'; return; }
+  box.innerHTML = sc.map(e=>{
+    const d = `${e.date.slice(0,4)}.${e.date.slice(4,6)}.${e.date.slice(6,8)}`;
+    return `<div class="sc-row"><div class="d">${d}</div><div class="n">${e.name}</div></div>`;
+  }).join('');
+}
+loadStandbyInfo();
+setInterval(loadStandbyInfo, 30*60*1000); // 30분마다 갱신
+let lastDay = new Date().getDate();
+setInterval(()=>{ const d = new Date().getDate(); if(d !== lastDay){ lastDay = d; loadStandbyInfo(); } }, 60*1000);
+
+// ---- 컨트롤러 state 구독 (활동 진행) ----
+let lastState = null;
+let lastSpokenNonce = null;
+let lastStartedAt = null;
+let tickHandle = null;
+// 호출(calls) 관련 변수도 미리 선언(아래 subscribeState 콜백이 evaluateScreen을 통해 참조함)
+let activeCalls = [];
+const spokenCallIds = new Set();
+
+subscribeState(classId, state=>{
+  lastState = state;
+  evaluateScreen();
+
+  if(!state) return;
+
+  // TTS: 즉시 안내
+  if(state.ttsNonce && state.ttsNonce !== lastSpokenNonce){
+    lastSpokenNonce = state.ttsNonce;
+    if(state.ttsMessage) speak(state.ttsMessage);
+  }
+  // TTS: 활동 시작 안내
+  if(state.mode === 'running' && state.startedAt !== lastStartedAt){
+    lastStartedAt = state.startedAt;
+    if(state.activityName) speak(`${state.activityName} 시작합니다.`);
+  }
+
+  if(state.mode === 'running' || state.mode === 'paused'){
+    document.getElementById('actNameEl').textContent = state.activityName || '활동';
+    if(tickHandle) clearInterval(tickHandle);
+    function tick(){
+      const timerEl = document.getElementById('actTimerEl');
+      const subEl = document.getElementById('actSubEl');
+      const bar = document.getElementById('progBar');
+      if(state.mode === 'paused'){
+        timerEl.textContent = state.pausedRemainingSec != null ? fmtCountdown(state.pausedRemainingSec) : '일시정지';
+        subEl.innerHTML = '<span class="paused-badge">⏸ 일시정지</span>';
+        if(state.durationSec > 0 && state.pausedRemainingSec != null){
+          bar.style.width = Math.max(0, 100 - (state.pausedRemainingSec/state.durationSec*100)) + '%';
+        }
+        return;
+      }
+      if(state.durationSec > 0){
+        const remaining = Math.max(0, state.durationSec - (Date.now()-state.startedAt)/1000);
+        timerEl.textContent = fmtCountdown(remaining);
+        subEl.textContent = remaining <= 0 ? '시간이 종료되었습니다' : '';
+        bar.style.width = Math.max(0, 100 - remaining/state.durationSec*100) + '%';
+      } else {
+        const elapsed = (Date.now()-state.startedAt)/1000;
+        timerEl.textContent = fmtCountdown(elapsed);
+        subEl.textContent = '경과 시간';
+        bar.style.width = '100%';
+      }
+    }
+    tick();
+    tickHandle = setInterval(tick, 500);
+  } else {
+    if(tickHandle) clearInterval(tickHandle);
+  }
+});
+
+// ---- 호출(calls) 구독 ----
+subscribeCallsForClass(classId, rows=>{
+  activeCalls = rows;
+  evaluateScreen();
+  const latest = rows[0];
+  if(latest && !spokenCallIds.has(latest.id)){
+    spokenCallIds.add(latest.id);
+    document.getElementById('callFrom').textContent = `${latest.teacherName || '교무실'}${latest.location ? ' · ' + latest.location : ''}`;
+    document.getElementById('callMsg').textContent = latest.message || '교무실로 와주세요.';
+    speak(`${latest.teacherName || '교무실'}에서 호출입니다. ${latest.message || ''}`);
+  }
+});
+document.getElementById('ackBtn').addEventListener('click', ()=>{
+  activeCalls.forEach(c=>acknowledgeCall(c.id));
+});
+
+// ---- 화면 우선순위: 호출 > 활동 진행 > 대기화면 ----
+function evaluateScreen(){
+  if(activeCalls.length){ showScreen('call'); return; }
+  if(lastState && (lastState.mode === 'running' || lastState.mode === 'paused')){ showScreen('activity'); return; }
+  showScreen('standby');
+}
+evaluateScreen();
+</script>
+</body>
+</html>

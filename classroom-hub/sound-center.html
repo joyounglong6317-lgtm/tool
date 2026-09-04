@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통합 교실 허브 · 소리센터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#FFE1EE; --bg-darker:#FFF8FC; --gold:#FF6FA6; --gold-light:#C765D8; --cream:#5B3358;
+    --calm:#4FCB93; --warn:#E8A23C; --over:#FF5C8A; --card:#FFFFFF; --border-soft:#FFD3E6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;font-family:'Noto Sans KR',sans-serif;
+    background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);color:var(--cream);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:background 1s;}
+  header{position:fixed;top:0;left:0;right:0;padding:12px 20px;display:flex;justify-content:space-between;
+    align-items:center;font-size:13px;color:#8a5c82;font-weight:700;}
+  header a{color:var(--cream);text-decoration:none;background:var(--card);border:2px solid var(--border-soft);
+    padding:5px 12px;border-radius:14px;font-size:12px;}
+  .char{font-size:clamp(120px,26vw,300px);line-height:1;transition:transform .15s;
+    filter:drop-shadow(0 10px 18px rgba(216,120,178,.25));}
+  .status-text{font-family:'Jua',sans-serif;font-weight:400;font-size:clamp(22px,4vw,40px);margin-top:6px;}
+  .threshold-note{font-size:14px;color:#8a5c82;margin-top:4px;font-weight:700;}
+  .meter-wrap{width:min(80vw,700px);height:28px;background:var(--border-soft);border-radius:16px;margin-top:26px;overflow:hidden;position:relative;}
+  .meter-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--calm),var(--warn),var(--over));transition:width .1s linear;}
+  .meter-threshold-mark{position:absolute;top:-4px;bottom:-4px;width:3px;background:#fff;box-shadow:0 0 0 1px var(--cream);}
+  .db-val{font-family:'Roboto Mono',monospace;font-size:20px;margin-top:10px;color:var(--gold-light);font-weight:700;}
+  .start-btn{margin-top:30px;background:linear-gradient(135deg,var(--gold),#FFA6CC);color:#fff;border:none;border-radius:30px;
+    padding:16px 34px;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px rgba(255,111,166,.35);}
+  .hint{margin-top:12px;font-size:12.5px;color:#B98CB0;max-width:480px;}
+  .cooldown-note{margin-top:14px;font-size:13px;color:var(--gold-light);min-height:18px;font-weight:700;}
+</style>
+</head>
+<body id="body">
+<header>
+  <div>📍 <span id="classLabelEl">-</span> · 활동: <span id="activityLabelEl">설정 없음</span></div>
+  <a href="controller.html">🎛 컨트롤러로</a>
+</header>
+
+<div id="preStart">
+  <div style="font-size:60px;">🔊</div>
+  <div style="font-size:20px;font-weight:900;margin:10px 0;">소리 센터</div>
+  <div class="hint">마이크 권한을 허용하면 실시간 소음 레벨을 캐릭터 표정으로 보여줍니다.<br>
+  (측정값은 절대 dB SPL이 아닌, 이 기기 마이크 기준 상대적 소음 지표입니다)</div>
+  <button class="start-btn" id="btnMicStart">🎤 마이크 시작하기</button>
+</div>
+
+<div id="mainView" style="display:none;">
+  <div class="char" id="charEl">🐰</div>
+  <div class="status-text" id="statusTextEl">조용해요</div>
+  <div class="threshold-note">허용 기준: <span id="thresholdLabel">50</span> dB</div>
+  <div class="meter-wrap">
+    <div class="meter-bar" id="meterBar"></div>
+    <div class="meter-threshold-mark" id="thresholdMark"></div>
+  </div>
+  <div class="db-val" id="dbVal">0 dB</div>
+  <div class="cooldown-note" id="cooldownNote"></div>
+</div>
+
+<script type="module">
+import { getSelectedClass, classLabel, getClassId, subscribeState, speak } from "./shared/classroom-hub-common.js";
+
+const urlParams = new URLSearchParams(location.search);
+let { grade, cls } = getSelectedClass();
+if(urlParams.get('grade')) grade = Number(urlParams.get('grade'));
+if(urlParams.get('class')) cls = Number(urlParams.get('class'));
+const classId = getClassId(grade, cls);
+document.getElementById('classLabelEl').textContent = classLabel(grade, cls);
+
+// ---- 컨트롤러 state에서 허용 소음 기준 + 현재 활동명 구독 ----
+let soundThresholdDb = 50;
+const METER_MAX_DB = 90; // 미터 위에서 표현하는 최대치(디자인용, 구독 콜백보다 먼저 선언)
+function positionThresholdMark(){
+  const pct = Math.min(100, (soundThresholdDb / METER_MAX_DB) * 100);
+  document.getElementById('thresholdMark').style.left = pct + '%';
+}
+
+subscribeState(classId, state=>{
+  soundThresholdDb = (state && state.soundThresholdDb) || 50;
+  document.getElementById('thresholdLabel').textContent = soundThresholdDb;
+  document.getElementById('activityLabelEl').textContent = (state && state.mode !== 'idle' && state.activityName) ? state.activityName : '설정 없음';
+  positionThresholdMark();
+});
+positionThresholdMark();
+
+// ---- 마이크 → 상대적 dB 추정 ----
+let audioCtx, analyser, dataArray, micStream;
+let smoothedDb = 0;
+let overSince = null;
+let lastWarnAt = 0;
+const WARN_HOLD_MS = 3000;   // 기준 초과가 이만큼 지속되면 경고
+const WARN_COOLDOWN_MS = 20000; // 경고 음성 재생 최소 간격
+
+document.getElementById('btnMicStart').addEventListener('click', startMic);
+
+async function startMic(){
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }catch(e){
+    alert('마이크 권한이 필요합니다: ' + e.message);
+    return;
+  }
+  document.getElementById('preStart').style.display = 'none';
+  document.getElementById('mainView').style.display = 'block';
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioCtx.createMediaStreamSource(micStream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0.6;
+  source.connect(analyser);
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+  requestAnimationFrame(loop);
+}
+
+function loop(){
+  analyser.getByteTimeDomainData(dataArray);
+  let sumSquares = 0;
+  for(let i=0;i<dataArray.length;i++){
+    const v = (dataArray[i]-128)/128;
+    sumSquares += v*v;
+  }
+  const rms = Math.sqrt(sumSquares/dataArray.length);
+  // RMS(0~1)를 대략적인 상대 dB 스케일(0~90)로 매핑
+  const estimatedDb = rms > 0.0001 ? Math.max(0, 20*Math.log10(rms) + 100) : 0;
+  smoothedDb = smoothedDb*0.75 + estimatedDb*0.25;
+
+  render(smoothedDb);
+  checkThreshold(smoothedDb);
+
+  requestAnimationFrame(loop);
+}
+
+function render(db){
+  const pct = Math.min(100, (db/METER_MAX_DB)*100);
+  document.getElementById('meterBar').style.width = pct + '%';
+  document.getElementById('dbVal').textContent = Math.round(db) + ' dB';
+
+  const ratio = db / soundThresholdDb;
+  const charEl = document.getElementById('charEl');
+  const statusEl = document.getElementById('statusTextEl');
+  const body = document.getElementById('body');
+  if(ratio < 0.6){
+    charEl.textContent = '🐰'; statusEl.textContent = '조용해요'; statusEl.style.color = 'var(--calm)';
+    body.style.background = 'radial-gradient(circle at 50% 30%, #DFFAEE, #FFF6FA 75%)';
+  } else if(ratio < 1){
+    charEl.textContent = '🙊'; statusEl.textContent = '조금 시끄러워요'; statusEl.style.color = 'var(--warn)';
+    body.style.background = 'radial-gradient(circle at 50% 30%, #FFF0D6, #FFF6FA 75%)';
+  } else {
+    charEl.textContent = '😾'; statusEl.textContent = '너무 시끄러워요!'; statusEl.style.color = 'var(--over)';
+    body.style.background = 'radial-gradient(circle at 50% 30%, #FFD3E2, #FFF6FA 75%)';
+  }
+  charEl.style.transform = `scale(${1 + Math.min(0.15, db/500)})`;
+}
+
+function checkThreshold(db){
+  const now = Date.now();
+  if(db >= soundThresholdDb){
+    if(overSince == null) overSince = now;
+    const held = now - overSince;
+    const note = document.getElementById('cooldownNote');
+    if(held >= WARN_HOLD_MS){
+      if(now - lastWarnAt >= WARN_COOLDOWN_MS){
+        lastWarnAt = now;
+        speak('조금만 목소리를 낮춰볼까요?');
+        note.textContent = '🔔 방금 음성 경고를 보냈어요';
+      } else {
+        const remain = Math.ceil((WARN_COOLDOWN_MS - (now-lastWarnAt))/1000);
+        note.textContent = `다음 경고까지 ${remain}초`;
+      }
+    }
+  } else {
+    overSince = null;
+    document.getElementById('cooldownNote').textContent = '';
+  }
+}
+</script>
+</body>
+</html>

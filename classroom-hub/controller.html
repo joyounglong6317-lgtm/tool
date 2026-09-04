@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통합 교실 허브 · 컨트롤러</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#FFE1EE; --bg-darker:#FFFFFF; --gold:#FF6FA6; --gold-light:#C765D8;
+    --cream:#5B3358; --danger:#FF5C8A; --ok:#4FCB93; --card:#FFF2F8; --card-strong:#FFE1EE;
+    --border-soft:#FFD3E6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Noto Sans KR',sans-serif;
+    background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);background-attachment:fixed;
+    color:var(--cream);min-height:100vh;}
+  header{background:linear-gradient(120deg,#FFE1EE,#F4D9FB);border-bottom:3px dashed var(--gold);padding:14px 20px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:10;
+    box-shadow:0 4px 16px rgba(255,111,166,.15);}
+  header h1{font-family:'Jua',sans-serif;font-weight:400;font-size:19px;margin:0;flex:1;min-width:180px;letter-spacing:.01em;}
+  header h1 span{color:var(--gold-light);}
+  .class-picker{display:flex;align-items:center;gap:6px;background:#fff;padding:6px 10px;border-radius:14px;border:2px solid var(--border-soft);}
+  .class-picker select{background:#fff;color:var(--cream);border:1px solid var(--gold);border-radius:8px;padding:5px 8px;font-weight:700;}
+  nav.modules{display:flex;gap:8px;flex-wrap:wrap;}
+  nav.modules a{color:var(--cream);text-decoration:none;background:#fff;border:2px solid var(--border-soft);
+    padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;white-space:nowrap;transition:.15s;}
+  nav.modules a:hover{background:var(--card-strong);border-color:var(--gold);transform:translateY(-1px);}
+  main{max-width:1100px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1.1fr .9fr;gap:18px;}
+  @media (max-width:860px){ main{grid-template-columns:1fr;} }
+  section.card{background:#fff;border:2px solid var(--border-soft);border-radius:24px;padding:20px;
+    box-shadow:0 10px 28px rgba(216,120,178,.14);}
+  section.card h2{font-family:'Jua',sans-serif;font-weight:400;margin:0 0 12px;font-size:16px;color:var(--gold-light);display:flex;align-items:center;gap:8px;}
+  .presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+  .preset-btn{background:var(--card);border:2px solid var(--border-soft);border-radius:16px;padding:12px 8px;
+    color:var(--cream);cursor:pointer;text-align:center;font-weight:700;font-size:13px;transition:.15s;}
+  .preset-btn .ico{font-size:24px;display:block;margin-bottom:4px;}
+  .preset-btn:hover{border-color:var(--gold);transform:translateY(-2px);}
+  .preset-btn.active{background:linear-gradient(135deg,var(--gold),#FFA6CC);color:#fff;border-color:var(--gold);
+    box-shadow:0 6px 14px rgba(255,111,166,.35);}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;color:#B07AA8;margin-bottom:5px;font-weight:700;}
+  .field input[type=text], .field input[type=number]{width:100%;padding:9px 10px;border-radius:10px;
+    border:2px solid var(--border-soft);background:#fff;color:var(--cream);font-size:14px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .field input[type=range]{width:100%;accent-color:var(--gold);}
+  .threshold-val{font-family:'Roboto Mono',monospace;color:var(--gold-light);font-weight:700;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .btn{border:none;border-radius:16px;padding:12px 16px;font-weight:900;font-size:14px;cursor:pointer;flex:1;
+    min-width:90px;box-shadow:0 4px 10px rgba(0,0,0,.08);transition:.15s;}
+  .btn:hover:not(:disabled){transform:translateY(-2px);}
+  .btn-start{background:linear-gradient(135deg,#7BE3B4,var(--ok));color:#fff;}
+  .btn-pause{background:linear-gradient(135deg,#FFC169,var(--gold));color:#fff;}
+  .btn-resume{background:linear-gradient(135deg,#9DC2FF,#5C93E8);color:#fff;}
+  .btn-end{background:linear-gradient(135deg,#FF9FB8,var(--danger));color:#fff;}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .status-box{text-align:center;padding:20px 10px;background:linear-gradient(160deg,#FFF6FA,#FDEBFA);
+    border-radius:20px;border:2px dashed var(--border-soft);}
+  .status-box .mode{font-size:13px;color:var(--gold-light);font-weight:700;letter-spacing:.05em;}
+  .status-box .activity{font-family:'Jua',sans-serif;font-weight:400;font-size:22px;margin:6px 0;color:var(--cream);}
+  .status-box .timer{font-family:'Roboto Mono',monospace;font-size:44px;font-weight:700;color:var(--gold);}
+  .tts-box textarea{width:100%;min-height:64px;border-radius:12px;border:2px solid var(--border-soft);
+    background:#fff;color:var(--cream);padding:10px;font-family:inherit;font-size:14px;resize:vertical;}
+  .tts-quick{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+  .tts-quick button{background:var(--card);border:2px solid var(--border-soft);color:var(--cream);
+    border-radius:16px;padding:5px 12px;font-size:12.5px;cursor:pointer;}
+  .tts-quick button:hover{border-color:var(--gold);background:var(--card-strong);}
+  .send-tts{background:linear-gradient(135deg,var(--gold-light),#DC8CE8);color:#fff;border:none;border-radius:14px;
+    padding:10px 16px;font-weight:900;cursor:pointer;width:100%;box-shadow:0 4px 10px rgba(199,101,216,.3);}
+  .conn{font-size:11px;color:#B98CB0;text-align:center;margin-top:8px;}
+  .warn-banner{background:#FFF3D6;border:2px dashed #FFC169;color:#8a6a1f;border-radius:14px;padding:10px 14px;
+    font-size:13px;margin-bottom:16px;grid-column:1/-1;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎛️ 통합 교실 허브 <span>· 컨트롤러</span></h1>
+  <div class="class-picker">
+    <label for="gradeSel" style="font-size:12px;">학급</label>
+    <select id="gradeSel"></select>
+    <select id="classSel"></select>
+  </div>
+  <nav class="modules">
+    <a href="hud.html" target="_blank">🖥 HUD</a>
+    <a href="sound-center.html" target="_blank">🔊 소리센터</a>
+    <a href="participation.html" target="_blank">🏆 참여게임</a>
+    <a href="call.html" target="_blank">📣 호출</a>
+  </nav>
+</header>
+
+<main>
+  <div id="configReadyWarn" class="warn-banner" style="display:none;">
+    ⚠️ 아직 Firebase 설정값이 입력되지 않았습니다. <code>shared/classroom-hub-common.js</code>의
+    <code>firebaseConfig</code>를 채워야 실시간 동기화가 동작합니다. (지금은 로컬 미리보기 상태)
+  </div>
+
+  <section class="card">
+    <h2>① 프리셋 / 직접 설정</h2>
+    <div class="presets" id="presetList"></div>
+
+    <div class="field">
+      <label>활동 이름</label>
+      <input type="text" id="activityName" placeholder="예: 상업경제 문제 풀이">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>진행 시간(분) — 0이면 무제한</label>
+        <input type="number" id="durationMin" min="0" value="10">
+      </div>
+      <div class="field">
+        <label>허용 소음 기준 <span class="threshold-val" id="thVal">50</span> dB</label>
+        <input type="range" id="thresholdDb" min="30" max="80" value="50">
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-start" id="btnStart">▶ 시작</button>
+      <button class="btn btn-pause" id="btnPause">⏸ 일시정지</button>
+      <button class="btn btn-resume" id="btnResume">⏵ 재개</button>
+      <button class="btn btn-end" id="btnEnd">⏹ 종료</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 현재 상태 (HUD와 실시간 동기화)</h2>
+    <div class="status-box">
+      <div class="mode" id="stMode">대기 중</div>
+      <div class="activity" id="stActivity">—</div>
+      <div class="timer" id="stTimer">--:--</div>
+    </div>
+    <div class="conn" id="connInfo">학급: —</div>
+
+    <div style="margin-top:18px;">
+      <h2>③ 즉시 음성 안내 (TTS)</h2>
+      <div class="tts-quick" id="ttsQuick"></div>
+      <div class="tts-box">
+        <textarea id="ttsText" placeholder="HUD 화면에서 바로 읽어줄 안내 문구를 입력하세요"></textarea>
+      </div>
+      <button class="send-tts" id="btnSendTts" style="margin-top:8px;">🔊 HUD에 안내 방송하기</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import {
+  IS_CONFIG_READY, GRADES, CLASSES_PER_GRADE, classLabel, getClassId,
+  getSelectedClass, setSelectedClass,
+  subscribeState, setState, subscribePresets
+} from "./shared/classroom-hub-common.js";
+
+document.getElementById('configReadyWarn').style.display = IS_CONFIG_READY ? 'none' : 'block';
+
+// ---- 학급 선택 ----
+const gradeSel = document.getElementById('gradeSel');
+const classSel = document.getElementById('classSel');
+let { grade, cls } = getSelectedClass();
+
+function fillGrades(){
+  gradeSel.innerHTML = GRADES.map(g=>`<option value="${g}">${g}학년</option>`).join('');
+  gradeSel.value = grade;
+}
+function fillClasses(){
+  const list = CLASSES_PER_GRADE[grade] || [];
+  classSel.innerHTML = list.map(c=>`<option value="${c}">${c}반</option>`).join('');
+  if(!list.includes(cls)) cls = list[0];
+  classSel.value = cls;
+}
+fillGrades(); fillClasses();
+
+// ---- 상태 렌더용 변수(구독 콜백이 참조하므로 구독 시작 전에 선언) ----
+let lastState = null;
+let tickHandle = null;
+
+let classId = getClassId(grade, cls);
+let unsubState = null;
+function resubscribe(){
+  document.getElementById('connInfo').textContent = `학급: ${classLabel(grade, cls)}  (classroomHub_state/${classId})`;
+  if(unsubState) unsubState();
+  unsubState = subscribeState(classId, renderState);
+}
+resubscribe();
+
+gradeSel.addEventListener('change', ()=>{ grade = Number(gradeSel.value); fillClasses(); onClassChange(); });
+classSel.addEventListener('change', ()=>{ cls = Number(classSel.value); onClassChange(); });
+function onClassChange(){
+  setSelectedClass(grade, cls);
+  classId = getClassId(grade, cls);
+  resubscribe();
+}
+
+// ---- 프리셋 ----
+let presets = [];
+let selectedPresetId = null;
+subscribePresets(list=>{
+  presets = list;
+  document.getElementById('presetList').innerHTML = presets.map(p=>`
+    <button type="button" class="preset-btn" data-id="${p.id}">
+      <span class="ico">${p.icon || '⭐'}</span>${p.name}
+    </button>`).join('');
+  document.querySelectorAll('.preset-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const p = presets.find(x=>x.id === btn.dataset.id);
+      if(!p) return;
+      selectedPresetId = p.id;
+      document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active', b===btn));
+      document.getElementById('activityName').value = p.name;
+      document.getElementById('durationMin').value = Math.round((p.durationSec||0)/60);
+      document.getElementById('thresholdDb').value = p.soundThresholdDb || 50;
+      document.getElementById('thVal').textContent = p.soundThresholdDb || 50;
+    });
+  });
+});
+
+document.getElementById('thresholdDb').addEventListener('input', e=>{
+  document.getElementById('thVal').textContent = e.target.value;
+});
+
+// ---- 제어 버튼 ----
+document.getElementById('btnStart').addEventListener('click', ()=>{
+  const name = document.getElementById('activityName').value.trim() || '활동';
+  const durationSec = Math.max(0, Number(document.getElementById('durationMin').value)) * 60;
+  const soundThresholdDb = Number(document.getElementById('thresholdDb').value);
+  setState(classId, {
+    presetId: selectedPresetId, activityName: name, durationSec, soundThresholdDb,
+    mode: 'running', startedAt: Date.now(), pausedRemainingSec: null
+  });
+});
+document.getElementById('btnPause').addEventListener('click', ()=>{
+  const s = lastState;
+  if(!s || s.mode !== 'running') return;
+  const elapsed = (Date.now() - s.startedAt) / 1000;
+  const remaining = s.durationSec > 0 ? Math.max(0, s.durationSec - elapsed) : null;
+  setState(classId, { mode: 'paused', pausedRemainingSec: remaining });
+});
+document.getElementById('btnResume').addEventListener('click', ()=>{
+  const s = lastState;
+  if(!s || s.mode !== 'paused') return;
+  const remaining = s.pausedRemainingSec;
+  const newStart = (s.durationSec > 0 && remaining != null) ? Date.now() - (s.durationSec - remaining) * 1000 : Date.now();
+  setState(classId, { mode: 'running', startedAt: newStart });
+});
+document.getElementById('btnEnd').addEventListener('click', ()=>{
+  setState(classId, { mode: 'idle', activityName: '', durationSec: 0, startedAt: null, pausedRemainingSec: null });
+});
+
+// ---- 상태 렌더 ----
+function renderState(state){
+  lastState = state;
+  const modeEl = document.getElementById('stMode');
+  const actEl = document.getElementById('stActivity');
+  const timerEl = document.getElementById('stTimer');
+  const modeLabel = { idle:'대기 중', running:'진행 중', paused:'일시정지', ended:'종료' };
+
+  document.getElementById('btnStart').disabled = !!(state && state.mode === 'running');
+  document.getElementById('btnPause').disabled = !(state && state.mode === 'running');
+  document.getElementById('btnResume').disabled = !(state && state.mode === 'paused');
+  document.getElementById('btnEnd').disabled = !state || state.mode === 'idle';
+
+  if(!state || state.mode === 'idle'){
+    modeEl.textContent = '대기 중'; actEl.textContent = '—'; timerEl.textContent = '--:--';
+    if(tickHandle) clearInterval(tickHandle);
+    return;
+  }
+  modeEl.textContent = modeLabel[state.mode] || state.mode;
+  actEl.textContent = state.activityName || '—';
+
+  if(tickHandle) clearInterval(tickHandle);
+  function tick(){
+    if(state.mode === 'running' && state.durationSec > 0){
+      const remaining = Math.max(0, state.durationSec - (Date.now() - state.startedAt)/1000);
+      timerEl.textContent = fmt(remaining);
+    } else if(state.mode === 'running'){
+      const elapsed = (Date.now() - state.startedAt)/1000;
+      timerEl.textContent = fmt(elapsed) + ' 경과';
+    } else if(state.mode === 'paused'){
+      timerEl.textContent = state.pausedRemainingSec != null ? fmt(state.pausedRemainingSec) : '일시정지';
+    }
+  }
+  function fmt(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = String(Math.floor(sec/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    return `${m}:${s}`;
+  }
+  tick();
+  tickHandle = setInterval(tick, 500);
+}
+
+// ---- TTS ----
+const QUICK_TTS = ["집중해 주세요!", "5분 남았습니다.", "정리할 시간이에요.", "목소리를 조금만 낮춰볼까요?", "다들 잘하고 있어요! 화이팅!"];
+document.getElementById('ttsQuick').innerHTML = QUICK_TTS.map(t=>`<button type="button">${t}</button>`).join('');
+document.querySelectorAll('#ttsQuick button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ document.getElementById('ttsText').value = btn.textContent; });
+});
+document.getElementById('btnSendTts').addEventListener('click', ()=>{
+  const text = document.getElementById('ttsText').value.trim();
+  if(!text) return;
+  setState(classId, { ttsMessage: text, ttsNonce: Date.now() });
+  document.getElementById('ttsText').value = '';
+});
+</script>
+</body>
+</html>
