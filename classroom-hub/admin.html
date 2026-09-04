@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통합 교실 허브 · 관리자 입력</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#FFE1EE; --gold:#FF6FA6; --gold-light:#C765D8;
+    --cream:#5B3358; --danger:#FF5C8A; --ok:#4FCB93; --card:#FFF2F8; --card-strong:#FFE1EE;
+    --border-soft:#FFD3E6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Noto Sans KR',sans-serif;
+    background:linear-gradient(160deg,#FFF6FA 0%,#F4ECFE 100%);background-attachment:fixed;
+    color:var(--cream);min-height:100vh;}
+  header{background:linear-gradient(120deg,#FFE1EE,#F4D9FB);border-bottom:3px dashed var(--gold);padding:14px 20px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:10;
+    box-shadow:0 4px 16px rgba(255,111,166,.15);}
+  header h1{font-family:'Jua',sans-serif;font-weight:400;font-size:19px;margin:0;flex:1;min-width:180px;}
+  header h1 span{color:var(--gold-light);}
+  nav.modules{display:flex;gap:8px;flex-wrap:wrap;}
+  nav.modules a{color:var(--cream);text-decoration:none;background:#fff;border:2px solid var(--border-soft);
+    padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;white-space:nowrap;transition:.15s;}
+  nav.modules a:hover{background:var(--card-strong);border-color:var(--gold);transform:translateY(-1px);}
+  main{max-width:920px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:18px;}
+  section.card{background:#fff;border:2px solid var(--border-soft);border-radius:24px;padding:20px;
+    box-shadow:0 10px 28px rgba(216,120,178,.14);}
+  section.card h2{font-family:'Jua',sans-serif;font-weight:400;margin:0 0 4px;font-size:16px;color:var(--gold-light);display:flex;align-items:center;gap:8px;}
+  section.card p.desc{margin:0 0 16px;font-size:12.5px;color:#8a5c82;line-height:1.6;}
+  .field label{display:block;font-size:12.5px;color:#B07AA8;margin-bottom:5px;font-weight:700;}
+  input[type=text], input[type=date], select{padding:9px 10px;border-radius:10px;
+    border:2px solid var(--border-soft);background:#fff;color:var(--cream);font-size:14px;font-family:inherit;}
+  .btn{border:none;border-radius:16px;padding:10px 16px;font-weight:900;font-size:13.5px;cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);transition:.15s;}
+  .btn:hover{transform:translateY(-2px);}
+  .btn-add{background:linear-gradient(135deg,#7BE3B4,var(--ok));color:#fff;}
+  .btn-save{background:linear-gradient(135deg,var(--gold-light),#DC8CE8);color:#fff;}
+  .btn-del{background:#fff;border:2px solid var(--danger);color:var(--danger);padding:5px 10px;border-radius:12px;font-size:12px;}
+
+  /* 학사일정 */
+  .sc-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px;}
+  .sc-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:#C79BC0;font-size:12px;font-weight:700;}
+  .sc-divider::before, .sc-divider::after{content:'';flex:1;height:1px;background:var(--border-soft);}
+  .sc-bulk{margin-bottom:16px;}
+  .sc-bulk label{display:block;font-size:12.5px;color:#B07AA8;margin-bottom:6px;font-weight:700;line-height:1.5;}
+  .sc-bulk textarea{width:100%;padding:10px;border-radius:12px;border:2px solid var(--border-soft);
+    background:#fff;color:var(--cream);font-size:13.5px;font-family:inherit;resize:vertical;line-height:1.6;}
+  .sc-bulk-row{display:flex;align-items:center;gap:12px;margin-top:8px;}
+  .sc-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;}
+  .sc-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:2px solid var(--border-soft);
+    border-radius:14px;font-size:13.5px;}
+  .sc-row .d{font-weight:900;color:var(--gold-light);min-width:96px;}
+  .sc-row .n{flex:1;}
+  .empty-note{color:#C79BC0;font-size:13px;padding:10px 2px;}
+
+  /* 시간표 */
+  .tt-class-picker{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+  table.tt-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.tt-table th, table.tt-table td{border:1.5px solid var(--border-soft);padding:6px;text-align:center;}
+  table.tt-table th{background:var(--card);color:var(--gold-light);font-weight:900;font-size:12.5px;}
+  table.tt-table td.period-cell{background:var(--card);font-weight:900;color:var(--gold);width:44px;}
+  table.tt-table input{width:100%;border:none;background:transparent;text-align:center;font-size:13px;color:var(--cream);padding:6px 2px;}
+  table.tt-table input:focus{outline:2px solid var(--gold);border-radius:6px;}
+  .tt-save-row{display:flex;justify-content:flex-end;margin-top:14px;gap:10px;align-items:center;}
+  .save-status{font-size:12.5px;color:var(--gold-light);font-weight:700;min-height:16px;}
+  .conn{font-size:11px;color:#B98CB0;text-align:center;margin-top:6px;}
+  .warn-banner{background:#FFF3D6;border:2px dashed #FFC169;color:#8a6a1f;border-radius:14px;padding:10px 14px;
+    font-size:13px;}
+
+  /* 급식 사진/PDF 업로드 */
+  .meal-upload-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px;}
+  input[type=file]{font-size:12.5px;color:var(--cream);max-width:240px;}
+  .meal-upload-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;margin-top:14px;}
+  .meal-upload-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--card);
+    border:2px solid var(--border-soft);border-radius:14px;font-size:13px;}
+  .meal-upload-row .thumb{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#fff;
+    border:1.5px solid var(--border-soft);flex-shrink:0;}
+  .meal-upload-row .thumb.pdf{display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .meal-upload-row .d{font-weight:900;color:var(--gold-light);min-width:90px;}
+  .meal-upload-row .fn{flex:1;color:#8a5c82;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .btn-view{background:#fff;border:2px solid var(--border-soft);color:var(--cream);padding:5px 10px;
+    border-radius:12px;font-size:12px;text-decoration:none;font-weight:700;}
+</style>
+</head>
+<body>
+<header>
+  <h1>✏️ 통합 교실 허브 <span>· 관리자 입력</span></h1>
+  <nav class="modules">
+    <a href="controller.html">🎛 컨트롤러</a>
+    <a href="hud.html" target="_blank">🖥 HUD</a>
+    <a href="call.html">📣 호출</a>
+  </nav>
+</header>
+
+<main>
+  <div id="configWarnBanner" class="warn-banner" style="display:none;">⚠️ Firebase 설정값이 아직 없어서 저장이 안 돼요. shared/classroom-hub-common.js 를 확인해주세요.</div>
+
+  <section class="card">
+    <h2>📌 학사일정 직접 등록</h2>
+    <p class="desc">여기서 등록하면 <b>모든 학년·반 HUD 대기화면</b>에 나이스(NEIS) 학사일정과 함께 표시됩니다. 나이스에 아직 등록되지 않은 일정(예: 학급별 행사)을 채워 넣을 때 사용하세요.</p>
+    <div class="sc-form">
+      <div class="field">
+        <label for="scDate">날짜</label>
+        <input type="date" id="scDate">
+      </div>
+      <div class="field" style="flex:1;min-width:180px;">
+        <label for="scName">일정 내용</label>
+        <input type="text" id="scName" placeholder="예: 2학년 현장체험학습">
+      </div>
+      <button class="btn btn-add" id="scAddBtn">＋ 추가</button>
+    </div>
+
+    <div class="sc-divider"><span>또는 한 번에 여러 개 등록</span></div>
+    <div class="sc-bulk">
+      <label for="scBulkText">한 줄에 일정 하나씩, "날짜 내용" 형식으로 붙여넣으세요. (날짜는 2026-09-10 / 2026.09.10 / 20260910 모두 가능)</label>
+      <textarea id="scBulkText" rows="5" placeholder="2026-09-10 체육대회&#10;2026-09-15 중간고사 시작&#10;2026-09-19 중간고사 종료"></textarea>
+      <div class="sc-bulk-row">
+        <button class="btn btn-add" id="scBulkAddBtn">＋ 일괄 추가</button>
+        <span class="save-status" id="scBulkStatus"></span>
+      </div>
+    </div>
+
+    <div class="sc-list" id="scList"><div class="empty-note">불러오는 중…</div></div>
+  </section>
+
+  <section class="card">
+    <h2>🗓 시간표 직접 등록</h2>
+    <p class="desc">선택한 학급의 <b>요일별 시간표</b>를 입력해두면, 나이스에서 그날 시간표를 아직 받아오지 못했을 때(학교가 나이스에 등록 전인 경우 등) HUD 대기화면에 대신 표시됩니다. 빈칸으로 두면 그 교시는 표시되지 않아요.</p>
+    <div class="tt-class-picker">
+      <div class="field">
+        <label for="ttGrade">학년</label>
+        <select id="ttGrade"></select>
+      </div>
+      <div class="field">
+        <label for="ttClass">반</label>
+        <select id="ttClass"></select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="tt-table" id="ttTable"></table>
+    </div>
+    <div class="tt-save-row">
+      <span class="save-status" id="ttSaveStatus"></span>
+      <button class="btn btn-save" id="ttSaveBtn">💾 이 학급 시간표 저장</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🍽 급식 사진 · PDF 업로드</h2>
+    <p class="desc">특정 날짜에 급식 사진이나 안내문(PDF)을 올려두면, 그 날짜가 되었을 때 <b>모든 학년·반 HUD 대기화면 급식판 맨 위에 자동으로</b> 예쁘게 표시됩니다. 나이스 급식 정보와 함께(또는 나이스에 정보가 없을 때 대신) 보여줘요.</p>
+    <div class="meal-upload-form">
+      <div class="field">
+        <label for="mealDate">날짜</label>
+        <input type="date" id="mealDate">
+      </div>
+      <div class="field" style="flex:1;min-width:200px;">
+        <label for="mealFile">사진(PNG/JPG) 또는 PDF</label>
+        <input type="file" id="mealFile" accept="image/*,.pdf">
+      </div>
+      <button class="btn btn-add" id="mealUploadBtn">⬆ 업로드</button>
+    </div>
+    <div class="save-status" id="mealUploadStatus"></div>
+    <div class="meal-upload-list" id="mealUploadList"><div class="empty-note">불러오는 중…</div></div>
+  </section>
+
+  <p class="conn">입력 내용은 Firebase에 저장되어 모든 화면에 실시간으로 반영됩니다.</p>
+</main>
+
+<script type="module">
+import {
+  IS_CONFIG_READY, GRADES, CLASSES_PER_GRADE, getClassId, classLabel,
+  MANUAL_TIMETABLE_DAY_KEYS, MANUAL_TIMETABLE_DAY_LABELS,
+  subscribeManualTimetable, saveManualTimetable,
+  subscribeManualSchedule, addManualScheduleEntry, deleteManualScheduleEntry,
+  uploadMealFile, subscribeMealUploadsList, deleteMealUpload
+} from "./shared/classroom-hub-common.js";
+
+document.getElementById('configWarnBanner').style.display = IS_CONFIG_READY ? 'none' : 'block';
+
+const PERIODS = [1,2,3,4,5,6,7];
+
+// ===================== 학사일정 =====================
+const scList = document.getElementById('scList');
+let currentSchedule = [];
+subscribeManualSchedule(rows=>{
+  currentSchedule = rows;
+  renderScheduleList();
+});
+function renderScheduleList(){
+  if(!currentSchedule.length){ scList.innerHTML = '<div class="empty-note">등록된 일정이 없습니다.</div>'; return; }
+  scList.innerHTML = currentSchedule.map(e=>{
+    const d = `${e.date.slice(0,4)}.${e.date.slice(4,6)}.${e.date.slice(6,8)}`;
+    return `<div class="sc-row"><span class="d">${d}</span><span class="n">${e.name}</span><button class="btn-del" data-id="${e.id}">삭제</button></div>`;
+  }).join('');
+  scList.querySelectorAll('.btn-del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      btn.disabled = true;
+      await deleteManualScheduleEntry(btn.dataset.id);
+    });
+  });
+}
+document.getElementById('scAddBtn').addEventListener('click', async ()=>{
+  const dateEl = document.getElementById('scDate');
+  const nameEl = document.getElementById('scName');
+  if(!dateEl.value || !nameEl.value.trim()){ alert('날짜와 일정 내용을 모두 입력해주세요.'); return; }
+  const date = dateEl.value.replace(/-/g, ''); // yyyy-mm-dd -> yyyymmdd
+  await addManualScheduleEntry({ date, name: nameEl.value.trim() });
+  nameEl.value = '';
+});
+
+// "2026-09-10 체육대회" / "2026.09.10 체육대회" / "20260910 체육대회" / 탭·쉼표 구분도 인식
+function parseBulkScheduleLine(line){
+  const trimmed = line.trim();
+  if(!trimmed) return null;
+  const m = trimmed.match(/^(\d{4})[.\-\/]?(\d{1,2})[.\-\/]?(\d{1,2})[,\s]+(.+)$/);
+  if(!m) return null;
+  const [, y, mo, d, name] = m;
+  const mm = mo.padStart(2, '0'), dd = d.padStart(2, '0');
+  if(Number(mm) < 1 || Number(mm) > 12 || Number(dd) < 1 || Number(dd) > 31) return null;
+  return { date: `${y}${mm}${dd}`, name: name.trim() };
+}
+
+document.getElementById('scBulkAddBtn').addEventListener('click', async ()=>{
+  const textEl = document.getElementById('scBulkText');
+  const status = document.getElementById('scBulkStatus');
+  const lines = textEl.value.split('\n');
+  const parsed = [];
+  const failedLines = [];
+  lines.forEach(line=>{
+    if(!line.trim()) return;
+    const row = parseBulkScheduleLine(line);
+    if(row) parsed.push(row);
+    else failedLines.push(line.trim());
+  });
+  if(!parsed.length){
+    status.textContent = failedLines.length
+      ? '❌ 인식된 일정이 없어요. "2026-09-10 체육대회"처럼 날짜와 내용을 한 줄에 함께 적어주세요.'
+      : '등록할 내용을 입력해주세요.';
+    return;
+  }
+  status.textContent = `등록 중… (${parsed.length}건)`;
+  try{
+    await Promise.all(parsed.map(row => addManualScheduleEntry(row)));
+    textEl.value = failedLines.length ? failedLines.join('\n') : '';
+    status.textContent = failedLines.length
+      ? `✅ ${parsed.length}건 등록 완료 · ⚠️ 형식을 인식하지 못한 ${failedLines.length}줄은 남겨뒀어요. 확인 후 다시 시도해주세요.`
+      : `✅ ${parsed.length}건 등록 완료!`;
+  }catch(e){
+    console.error(e);
+    status.textContent = '❌ 일괄 등록 중 오류가 발생했습니다: ' + (e.message || '');
+  }
+});
+
+// ===================== 시간표 =====================
+const gradeSel = document.getElementById('ttGrade');
+const classSel = document.getElementById('ttClass');
+GRADES.forEach(g=>{
+  const opt = document.createElement('option');
+  opt.value = g; opt.textContent = `${g}학년`;
+  gradeSel.appendChild(opt);
+});
+function fillClassOptions(){
+  const g = Number(gradeSel.value);
+  classSel.innerHTML = '';
+  (CLASSES_PER_GRADE[g] || []).forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = `${c}반`;
+    classSel.appendChild(opt);
+  });
+}
+fillClassOptions();
+
+function buildTable(){
+  const table = document.getElementById('ttTable');
+  let head = '<tr><th>교시</th>' + MANUAL_TIMETABLE_DAY_KEYS.map(k=>`<th>${MANUAL_TIMETABLE_DAY_LABELS[k]}</th>`).join('') + '</tr>';
+  let rows = PERIODS.map(p=>{
+    const cells = MANUAL_TIMETABLE_DAY_KEYS.map(k=>`<td><input type="text" data-day="${k}" data-period="${p}" placeholder=""></td>`).join('');
+    return `<tr><td class="period-cell">${p}</td>${cells}</tr>`;
+  }).join('');
+  table.innerHTML = head + rows;
+}
+buildTable();
+
+let ttUnsub = null;
+let currentClassId = null;
+function loadClassTimetable(){
+  if(ttUnsub) ttUnsub();
+  const grade = Number(gradeSel.value);
+  const cls = Number(classSel.value);
+  currentClassId = getClassId(grade, cls);
+  document.getElementById('ttSaveStatus').textContent = '';
+  ttUnsub = subscribeManualTimetable(currentClassId, data=>{
+    const days = (data && data.days) || {};
+    // 모든 칸 비우고 나서 저장된 값 채우기
+    document.querySelectorAll('#ttTable input').forEach(inp=>{ inp.value = ''; });
+    MANUAL_TIMETABLE_DAY_KEYS.forEach(k=>{
+      (days[k] || []).forEach(entry=>{
+        const inp = document.querySelector(`#ttTable input[data-day="${k}"][data-period="${entry.period}"]`);
+        if(inp) inp.value = entry.subject || '';
+      });
+    });
+  });
+}
+gradeSel.addEventListener('change', ()=>{ fillClassOptions(); loadClassTimetable(); });
+classSel.addEventListener('change', loadClassTimetable);
+loadClassTimetable();
+
+document.getElementById('ttSaveBtn').addEventListener('click', async ()=>{
+  const days = {};
+  MANUAL_TIMETABLE_DAY_KEYS.forEach(k=>{ days[k] = []; });
+  document.querySelectorAll('#ttTable input').forEach(inp=>{
+    const subject = inp.value.trim();
+    if(!subject) return;
+    days[inp.dataset.day].push({ period: Number(inp.dataset.period), subject });
+  });
+  const status = document.getElementById('ttSaveStatus');
+  status.textContent = '저장 중…';
+  await saveManualTimetable(currentClassId, days);
+  status.textContent = `✅ ${classLabel(Number(gradeSel.value), Number(classSel.value))} 시간표가 저장되었습니다.`;
+});
+
+// ===================== 급식 사진/PDF 업로드 =====================
+let mealUploads = [];
+subscribeMealUploadsList(rows=>{
+  mealUploads = rows;
+  renderMealUploadList();
+});
+function renderMealUploadList(){
+  const box = document.getElementById('mealUploadList');
+  if(!mealUploads.length){ box.innerHTML = '<div class="empty-note">등록된 급식 사진/PDF가 없습니다.</div>'; return; }
+  box.innerHTML = mealUploads.map(u=>{
+    const d = `${u.id.slice(0,4)}.${u.id.slice(4,6)}.${u.id.slice(6,8)}`;
+    const isPdf = (u.contentType || '').includes('pdf') || /\.pdf$/i.test(u.fileName || '');
+    const thumb = isPdf
+      ? `<div class="thumb pdf">📄</div>`
+      : `<img class="thumb" src="${u.url}" alt="">`;
+    return `<div class="meal-upload-row">${thumb}<span class="d">${d}</span><span class="fn">${u.fileName || ''}</span>
+      <a class="btn-view" href="${u.url}" target="_blank" rel="noopener">보기</a>
+      <button class="btn-del" data-date="${u.id}" data-path="${u.storagePath || ''}">삭제</button></div>`;
+  }).join('');
+  box.querySelectorAll('.btn-del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      btn.disabled = true;
+      await deleteMealUpload(btn.dataset.date, btn.dataset.path);
+    });
+  });
+}
+
+document.getElementById('mealUploadBtn').addEventListener('click', async ()=>{
+  const dateEl = document.getElementById('mealDate');
+  const fileEl = document.getElementById('mealFile');
+  const status = document.getElementById('mealUploadStatus');
+  if(!dateEl.value){ alert('날짜를 선택해주세요.'); return; }
+  if(!fileEl.files || !fileEl.files[0]){ alert('사진 또는 PDF 파일을 선택해주세요.'); return; }
+  const date = dateEl.value.replace(/-/g, '');
+  status.textContent = '업로드 중…';
+  try{
+    await uploadMealFile(date, fileEl.files[0]);
+    status.textContent = `✅ ${date.slice(0,4)}.${date.slice(4,6)}.${date.slice(6,8)} 급식 파일이 등록되었습니다.`;
+    fileEl.value = '';
+  }catch(e){
+    console.error(e);
+    status.textContent = '❌ 업로드에 실패했습니다: ' + (e.message || '');
+  }
+});
+</script>
+</body>
+</html>

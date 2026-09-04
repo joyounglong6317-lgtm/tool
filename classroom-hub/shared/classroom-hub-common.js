@@ -17,6 +17,9 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc,
   collection, query, where, orderBy, limit, onSnapshot, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import {
+  getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 // =====================================================================
 // 1) Firebase 프로젝트 설정 — 여기를 실제 값으로 교체하세요
@@ -35,6 +38,7 @@ export const IS_CONFIG_READY = !String(firebaseConfig.apiKey).startsWith("REPLAC
 
 function getApp_(){ return getApps().length ? getApp() : initializeApp(firebaseConfig); }
 export const db = IS_CONFIG_READY ? getFirestore(getApp_()) : null;
+export const storage = IS_CONFIG_READY ? getStorage(getApp_()) : null;
 
 let authReadyPromise = null;
 export function ensureAuth(){
@@ -237,4 +241,96 @@ export function fmtCountdown(sec){
   const m = String(Math.floor(sec/60)).padStart(2,"0");
   const s = String(sec%60).padStart(2,"0");
   return `${m}:${s}`;
+}
+
+// =====================================================================
+// 10) 수동 등록(관리자 입력) — 시간표(학급별) / 학사일정(전체 학급 공통)
+//     NEIS API에 정보가 없거나 부족할 때 선생님이 admin.html에서 직접 입력한
+//     내용을 HUD 대기화면에서 나이스 정보와 함께(또는 대신) 보여준다.
+// =====================================================================
+export const MANUAL_TIMETABLE_DAY_KEYS = ["mon","tue","wed","thu","fri"];
+export const MANUAL_TIMETABLE_DAY_LABELS = { mon:"월", tue:"화", wed:"수", thu:"목", fri:"금" };
+
+// 학급별 주간 시간표: classroomHub_manualTimetable/{classId}
+// { days: { mon:[{period,subject}], tue:[...], wed:[...], thu:[...], fri:[...] } }
+export function subscribeManualTimetable(classId, cb){
+  if(!db){ cb({ days:{} }); return () => {}; }
+  return onSnapshot(doc(db, "classroomHub_manualTimetable", classId), snap=>{
+    cb(snap.exists() ? snap.data() : { days:{} });
+  }, err=>console.error("[classroom-hub] manualTimetable 구독 오류:", err));
+}
+export async function saveManualTimetable(classId, days){
+  if(!db) return;
+  await ensureAuth();
+  await setDoc(doc(db, "classroomHub_manualTimetable", classId), { days, updatedAt: serverTimestamp() });
+}
+
+// 전체 학급 공통 학사일정: classroomHub_manualSchedule/{autoId} — { date:"YYYYMMDD", name, createdAt }
+// classId로 구분하지 않는 컬렉션이라 등록하면 자동으로 모든 학급 HUD에 동일하게 반영된다.
+export function subscribeManualSchedule(cb){
+  if(!db){ cb([]); return () => {}; }
+  const qy = query(collection(db, "classroomHub_manualSchedule"), orderBy("date", "asc"));
+  return onSnapshot(qy, snap=>{
+    const rows = [];
+    snap.forEach(d=>rows.push({ id: d.id, ...d.data() }));
+    cb(rows);
+  }, err=>console.error("[classroom-hub] manualSchedule 구독 오류:", err));
+}
+export async function addManualScheduleEntry({ date, name }){
+  if(!db) return;
+  await ensureAuth();
+  await addDoc(collection(db, "classroomHub_manualSchedule"), { date, name, createdAt: serverTimestamp() });
+}
+export async function deleteManualScheduleEntry(id){
+  if(!db) return;
+  await ensureAuth();
+  await deleteDoc(doc(db, "classroomHub_manualSchedule", id));
+}
+
+// =====================================================================
+// 11) 급식 메뉴 사진/PDF 업로드 — 나이스 대신(또는 함께) 그날 급식판 이미지를 보여줌
+//     classroomHub_mealUploads/{date}  { url, fileName, contentType, uploadedAt }
+//     date로 문서를 구분하므로, 해당 날짜가 오면 HUD가 자동으로 그 파일을 보여준다.
+//     전체 학급 공통(학급으로 구분하지 않음) — 급식은 원래 학교 전체 공통이라 자연스러움.
+// =====================================================================
+export async function uploadMealFile(date, file){
+  if(!db || !storage) throw new Error("Firebase 설정이 아직 준비되지 않았습니다.");
+  await ensureAuth();
+  const safeName = file.name.replace(/[^\w.\-가-힣]/g, "_");
+  const path = `mealUploads/${date}/${Date.now()}_${safeName}`;
+  const fileRef = storageRef(storage, path);
+  await uploadBytes(fileRef, file, { contentType: file.type || "application/octet-stream" });
+  const url = await getDownloadURL(fileRef);
+  await setDoc(doc(db, "classroomHub_mealUploads", date), {
+    url, storagePath: path, fileName: file.name,
+    contentType: file.type || "", uploadedAt: serverTimestamp()
+  });
+  return url;
+}
+
+export function subscribeMealUpload(date, cb){
+  if(!db){ cb(null); return () => {}; }
+  return onSnapshot(doc(db, "classroomHub_mealUploads", date), snap=>{
+    cb(snap.exists() ? snap.data() : null);
+  }, err=>console.error("[classroom-hub] mealUpload 구독 오류:", err));
+}
+
+// 관리자 화면에서 등록된 급식 이미지 목록을 날짜순으로 보여줄 때 사용
+export function subscribeMealUploadsList(cb){
+  if(!db){ cb([]); return () => {}; }
+  const qy = query(collection(db, "classroomHub_mealUploads"), orderBy("__name__", "desc"));
+  return onSnapshot(qy, snap=>{
+    const rows = [];
+    snap.forEach(d=>rows.push({ id: d.id, ...d.data() }));
+    cb(rows);
+  }, err=>console.error("[classroom-hub] mealUploadsList 구독 오류:", err));
+}
+
+export async function deleteMealUpload(date, storagePath){
+  if(!db) return;
+  await ensureAuth();
+  await deleteDoc(doc(db, "classroomHub_mealUploads", date));
+  if(storagePath && storage){
+    try { await deleteObject(storageRef(storage, storagePath)); } catch(e){ console.warn("[classroom-hub] 스토리지 파일 삭제 실패(문서는 삭제됨):", e); }
+  }
 }

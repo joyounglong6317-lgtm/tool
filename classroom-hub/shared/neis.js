@@ -97,6 +97,36 @@ function cleanMealMenu(text){
   return text.split("<br/>").map(s=>s.replace(/\([0-9.]+\)/g, "").trim()).filter(Boolean);
 }
 
+// 메뉴 이름 속 키워드로 어울리는 이모지를 골라주는 간단한 규칙(급식판 꾸미기용)
+const FOOD_EMOJI_RULES = [
+  [/김치/, "🥬"], [/미역국|미역/, "🍲"], [/국수|라면|우동|짜장|짬뽕|파스타/, "🍜"],
+  [/국|탕|찌개|스프|수프/, "🍲"], [/밥|덮밥|비빔밥|볶음밥|주먹밥/, "🍚"],
+  [/빵|토스트|샌드위치|베이글/, "🍞"], [/치킨|닭/, "🍗"], [/돈까스|돈가스|탕수육|폭찹|너겟/, "🍖"],
+  [/불고기|갈비|스테이크|고기|삼겹살/, "🥩"], [/생선|고등어|갈치|삼치|연어|참치/, "🐟"],
+  [/새우|오징어|낙지|해물|조개/, "🦐"], [/계란|달걀/, "🥚"], [/두부|순두부/, "🧊"],
+  [/사과|귤|바나나|포도|수박|딸기|참외|배|오렌지|과일/, "🍎"], [/우유/, "🥛"], [/요거트|요구르트/, "🥤"],
+  [/샐러드|채소|나물/, "🥗"], [/떡/, "🍡"], [/피자/, "🍕"], [/만두/, "🥟"],
+  [/케이크|디저트|과자|쿠키/, "🍰"], [/주스|음료|식혜|사이다/, "🧃"], [/김\b/, "🍙"],
+  [/카레/, "🍛"], [/멸치/, "🐟"], [/감자|고구마/, "🥔"], [/버섯/, "🍄"]
+];
+export function mealEmoji(dish){
+  for(const [re, emoji] of FOOD_EMOJI_RULES){ if(re.test(dish)) return emoji; }
+  return "🍴";
+}
+// 따뜻하게 나오는(김이 나는) 메뉴인지 대략적으로 판별 — 급식판 김 애니메이션용
+const HOT_DISH_RULE = /국|탕|찌개|면|국수|우동|짜장|짬뽕|파스타|밥|볶음|구이|찜|튀김|까스|가스|불고기|갈비|스테이크|카레|만두|피자|핫도그|스프|수프|전골|조림/;
+export function isHotDish(dish){
+  return HOT_DISH_RULE.test(dish);
+}
+
+export function mealTypeEmoji(mealType){
+  if(!mealType) return "🍽";
+  if(mealType.includes("조")) return "🌅";
+  if(mealType.includes("중")) return "☀️";
+  if(mealType.includes("석")) return "🌙";
+  return "🍽";
+}
+
 // 반환: [{ mealType: '조식'|'중식'|'석식', menu: string[], calInfo, ntrInfo }]
 export async function getMeal(officeCode, schoolCode, date = new Date()){
   const { rows } = await callNeis("mealServiceDietInfo", {
