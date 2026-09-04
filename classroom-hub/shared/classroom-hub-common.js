@@ -22,12 +22,13 @@ import {
 // 1) Firebase 프로젝트 설정 — 여기를 실제 값으로 교체하세요
 // =====================================================================
 export const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID"
+  apiKey: "AIzaSyAQrW0iSjJQL1iANun1t5rip0viEa1qIUc",
+  authDomain: "totalhub.firebaseapp.com",
+  projectId: "totalhub",
+  storageBucket: "totalhub.firebasestorage.app",
+  messagingSenderId: "235632322089",
+  appId: "1:235632322089:web:63791f241ea3e7c1195e38",
+  measurementId: "G-74LJ1151KZ"
 };
 
 export const IS_CONFIG_READY = !String(firebaseConfig.apiKey).startsWith("REPLACE_WITH");
