@@ -22,7 +22,7 @@ import {
 // 1) Firebase 프로젝트 설정 — 여기를 실제 값으로 교체하세요
 // =====================================================================
 export const firebaseConfig = {
-    apiKey: "AIzaSyAQrW0iSjJQL1iANun1t5rip0viEa1qIUc",
+  apiKey: "AIzaSyAQrW0iSjJQL1iANun1t5rip0viEa1qIUc",
   authDomain: "totalhub.firebaseapp.com",
   projectId: "totalhub",
   storageBucket: "totalhub.firebasestorage.app",
