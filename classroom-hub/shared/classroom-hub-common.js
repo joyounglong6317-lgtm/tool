@@ -162,13 +162,14 @@ export async function sendCall({ teacherName, location, message, targetAll, targ
 }
 
 // HUD가 자기 classId에 해당하는 "활성" 최신 호출을 구독
-export function subscribeCallsForClass(classId, cb){
+export function subscribeCallsForClass(classId, cb, onError){
   if(!db) return () => {};
+  // 주의: where + orderBy를 같이 쓰면 Firestore 복합 색인이 필요해져서(콘솔에서
+  // 별도로 만들어줘야 함) 조용히 실패할 수 있다. orderBy는 빼고 클라이언트에서
+  // 정렬해서, 색인 설정 없이도 항상 동작하도록 함.
   const qy = query(
     collection(db, "calls"),
-    where("active", "==", true),
-    orderBy("createdAt", "desc"),
-    limit(20)
+    where("active", "==", true)
   );
   return onSnapshot(qy, snap=>{
     const rows = [];
@@ -178,8 +179,16 @@ export function subscribeCallsForClass(classId, cb){
         rows.push({ id: d.id, ...data });
       }
     });
+    rows.sort((a, b) => {
+      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return bt - at;
+    });
     cb(rows);
-  }, err=>console.error("[classroom-hub] calls 구독 오류:", err));
+  }, err => {
+    console.error("[classroom-hub] calls 구독 오류:", err);
+    if(onError) onError(err);
+  });
 }
 
 // 교무실 화면에서 최근 발신 이력을 볼 때 사용(선택)
