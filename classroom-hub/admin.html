@@ -82,7 +82,16 @@
   .meal-upload-row .d{font-weight:900;color:var(--gold-light);min-width:90px;}
   .meal-upload-row .fn{flex:1;color:#8a5c82;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .btn-view{background:#fff;border:2px solid var(--border-soft);color:var(--cream);padding:5px 10px;
-    border-radius:12px;font-size:12px;text-decoration:none;font-weight:700;}
+    border-radius:12px;font-size:12px;text-decoration:none;font-weight:700;cursor:pointer;font-family:inherit;}
+  .meal-preview-modal{position:fixed;inset:0;background:rgba(91,51,88,.55);display:flex;align-items:center;
+    justify-content:center;z-index:1000;padding:24px;}
+  .meal-preview-modal[hidden]{display:none;}
+  .meal-preview-inner{background:#fff;border-radius:20px;padding:14px;max-width:min(92vw,720px);
+    max-height:88vh;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .meal-preview-inner img{display:block;max-width:100%;max-height:78vh;border-radius:12px;}
+  .meal-preview-inner iframe{display:block;width:min(80vw,650px);height:75vh;border:none;border-radius:12px;}
+  .meal-preview-close{position:absolute;top:-14px;right:-14px;width:32px;height:32px;border-radius:50%;
+    border:2px solid var(--border-soft);background:#fff;color:var(--cream);font-weight:900;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -150,14 +159,15 @@
 
   <section class="card">
     <h2>🍽 급식 사진 · PDF 업로드</h2>
-    <p class="desc">특정 날짜에 급식 사진이나 안내문(PDF)을 올려두면, 그 날짜가 되었을 때 <b>모든 학년·반 HUD 대기화면 급식판 맨 위에 자동으로</b> 예쁘게 표시됩니다. 나이스 급식 정보와 함께(또는 나이스에 정보가 없을 때 대신) 보여줘요.</p>
+    <p class="desc">특정 날짜에 급식 사진이나 안내문(PDF)을 올려두면, 그 날짜가 되었을 때 <b>모든 학년·반 HUD 대기화면 급식판 맨 위에 자동으로</b> 예쁘게 표시됩니다. 나이스 급식 정보와 함께(또는 나이스에 정보가 없을 때 대신) 보여줘요.<br>
+    <b>무료로 저장하는 방식이라 사진은 자동으로 용량을 줄여서 저장돼요.</b> PDF는 원본 그대로라 용량이 너무 크면(약 700KB 이상) 저장이 안 될 수 있어요 — 그럴 땐 사진으로 올려주세요.</p>
     <div class="meal-upload-form">
       <div class="field">
         <label for="mealDate">날짜</label>
         <input type="date" id="mealDate">
       </div>
       <div class="field" style="flex:1;min-width:200px;">
-        <label for="mealFile">사진(PNG/JPG) 또는 PDF</label>
+        <label for="mealFile">사진(PNG/JPG 권장) 또는 작은 PDF</label>
         <input type="file" id="mealFile" accept="image/*,.pdf">
       </div>
       <button class="btn btn-add" id="mealUploadBtn">⬆ 업로드</button>
@@ -168,6 +178,13 @@
 
   <p class="conn">입력 내용은 Firebase에 저장되어 모든 화면에 실시간으로 반영됩니다.</p>
 </main>
+
+<div class="meal-preview-modal" id="mealPreviewModal" hidden>
+  <div class="meal-preview-inner">
+    <button class="meal-preview-close" id="mealPreviewClose" type="button">✕</button>
+    <div id="mealPreviewBody"></div>
+  </div>
+</div>
 
 <script type="module">
 import {
@@ -331,23 +348,46 @@ subscribeMealUploadsList(rows=>{
 function renderMealUploadList(){
   const box = document.getElementById('mealUploadList');
   if(!mealUploads.length){ box.innerHTML = '<div class="empty-note">등록된 급식 사진/PDF가 없습니다.</div>'; return; }
-  box.innerHTML = mealUploads.map(u=>{
+  box.innerHTML = mealUploads.map((u, i)=>{
     const d = `${u.id.slice(0,4)}.${u.id.slice(4,6)}.${u.id.slice(6,8)}`;
     const isPdf = (u.contentType || '').includes('pdf') || /\.pdf$/i.test(u.fileName || '');
     const thumb = isPdf
       ? `<div class="thumb pdf">📄</div>`
       : `<img class="thumb" src="${u.url}" alt="">`;
     return `<div class="meal-upload-row">${thumb}<span class="d">${d}</span><span class="fn">${u.fileName || ''}</span>
-      <a class="btn-view" href="${u.url}" target="_blank" rel="noopener">보기</a>
-      <button class="btn-del" data-date="${u.id}" data-path="${u.storagePath || ''}">삭제</button></div>`;
+      <button class="btn-view" data-idx="${i}" type="button">보기</button>
+      <button class="btn-del" data-date="${u.id}">삭제</button></div>`;
   }).join('');
+  box.querySelectorAll('.btn-view').forEach(btn=>{
+    btn.addEventListener('click', ()=> openMealPreview(mealUploads[Number(btn.dataset.idx)]));
+  });
   box.querySelectorAll('.btn-del').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       btn.disabled = true;
-      await deleteMealUpload(btn.dataset.date, btn.dataset.path);
+      await deleteMealUpload(btn.dataset.date);
     });
   });
 }
+
+// data URL은 브라우저가 새 탭 직접 열기를 막는 경우가 있어서, 같은 페이지 안의 작은
+// 미리보기 창(모달)으로 대신 보여준다. (iframe/img는 data URL을 문제 없이 표시함)
+const mealPreviewModal = document.getElementById('mealPreviewModal');
+const mealPreviewBody = document.getElementById('mealPreviewBody');
+function openMealPreview(u){
+  if(!u) return;
+  const isPdf = (u.contentType || '').includes('pdf') || /\.pdf$/i.test(u.fileName || '');
+  mealPreviewBody.innerHTML = isPdf
+    ? `<iframe src="${u.url}" title="${u.fileName || 'PDF'}"></iframe>`
+    : `<img src="${u.url}" alt="${u.fileName || ''}">`;
+  mealPreviewModal.hidden = false;
+}
+document.getElementById('mealPreviewClose').addEventListener('click', ()=>{
+  mealPreviewModal.hidden = true;
+  mealPreviewBody.innerHTML = '';
+});
+mealPreviewModal.addEventListener('click', (e)=>{
+  if(e.target === mealPreviewModal){ mealPreviewModal.hidden = true; mealPreviewBody.innerHTML = ''; }
+});
 
 document.getElementById('mealUploadBtn').addEventListener('click', async ()=>{
   const dateEl = document.getElementById('mealDate');
